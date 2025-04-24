@@ -6,7 +6,7 @@ import { routes } from './routes';
 
 const app: Express = express();
 
-const PORT: number = parseInt(process.env.PORT) || 4001;
+const PORT: number = parseInt(process.env.PORT) || 4000;
 
 app.use(cors());
 
