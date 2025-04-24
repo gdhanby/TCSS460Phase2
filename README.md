@@ -9,7 +9,9 @@ Alpha Sprint Contribution
 - Noah: Troubleshooting
 - Ian: N/A
 - Christian: N/A
-Alpha Sprint Meetings
+
+Alpha Sprint Meetings:
 The primary form of communication is was through Discord text and voice channels
-Alpha Sprint Comments
+
+Alpha Sprint Comments:
 N/A
