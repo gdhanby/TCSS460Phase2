@@ -81,6 +81,13 @@ CREATE TABLE RATINGS
 );
 
 
+-- copy books data into books table. this MIGHT not work when running this file from the command line --
+COPY books
+FROM 'data/books.csv'
+DELIMITER ','
+CSV HEADER;
+
+
 -- after copying csv file into books, we populate the other tables --
 INSERT INTO BOOKS2 (id, isbn13, publication_year, original_title, title, image_url, image_small_url)
 SELECT id, isbn13, publication_year, original_title, title, image_url, image_small_url
