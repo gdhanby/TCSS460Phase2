@@ -45,35 +45,40 @@ CREATE TABLE BOOKS (id INT PRIMARY KEY,
 DROP TABLE IF EXISTS BOOKS2;
 CREATE TABLE BOOKS2
 (
-  isbn13 BIGINT NOT NULL,
-  id INT NOT NULL,
-  publication_year INT NOT NULL,
-  original_title TEXT NOT NULL,
-  title TEXT NOT NULL,
-  image_url TEXT NOT NULL,
-  image_small_url TEXT NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE (isbn13)
+    id INT NOT NULL,
+    isbn13 BIGINT NOT NULL,
+    publication_year INT NOT NULL,
+    original_title TEXT NOT NULL,
+    title TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    image_small_url TEXT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE (isbn13)
 );
 
 DROP TABLE IF EXISTS BOOKAUTHORS;
 CREATE TABLE BOOKAUTHORS
-(
-  authors TEXT NOT NULL,
-  id INT NOT NULL,
-  FOREIGN KEY (id) REFERENCES BOOKS2(id)
+( 
+    id INT NOT NULL,
+    authors TEXT NOT NULL,
+    FOREIGN KEY (id) REFERENCES BOOKS2(id)
 );
 
 DROP TABLE IF EXISTS RATINGS;
 CREATE TABLE RATINGS
 (
-  rating_1 INT NOT NULL,
-  rating_2 INT NOT NULL,
-  rating_3 INT NOT NULL,
-  rating_4 INT NOT NULL,
-  rating_5 INT NOT NULL,
-  id INT NOT NULL,
-  FOREIGN KEY (id) REFERENCES BOOKS2(id)
+    id INT NOT NULL,
+    rating_1 INT NOT NULL,
+    rating_2 INT NOT NULL,
+    rating_3 INT NOT NULL,
+    rating_4 INT NOT NULL,
+    rating_5 INT NOT NULL,
+    rating_count INT
+        GENERATED ALWAYS AS (rating_1 + rating_2 + rating_3 + rating_4 + rating_5) STORED,
+    rating_avg NUMERIC(3, 2)
+        GENERATED ALWAYS AS
+        (cast((rating_1 * 1 + rating_2 * 2 + rating_3 * 3 + rating_4 * 4 + rating_5 * 5) as decimal) / (rating_1 + rating_2 + rating_3 + rating_4 + rating_5)) STORED,
+    FOREIGN KEY (id) REFERENCES BOOKS2(id)
 );
 
 
