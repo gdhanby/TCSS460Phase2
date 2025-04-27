@@ -17,7 +17,7 @@ function mwValidISBN13(
     response: Response,
     next: NextFunction
 ) {
-    const isbnString: string = request.params.isbn;
+    const isbnString: string = request.params.isbn13;
     if (isbnString.length == 13 && /^\d+$/.test(isbnString)) {
         next();
     } else {
@@ -78,8 +78,46 @@ function mwValidBookEntry(
     }
 }
 
+/**
+ * @apiDefine JWT
+ * @apiHeader {String} Authorization The string "Bearer " + a valid JSON Web Token (JWT).
+ */
+
+/**
+ * @api {get} /books/:isbn13 Request to retrieve a book entry by ISBN
+ *
+ * @apiDescription Request to retrieve the complete book entry for <code>isbn13</code>.
+ *
+ * @apiName GetBookByISBN
+ * @apiGroup Books
+ *
+ * @apiParam {string} the ISBN13 to look up
+ *
+ * @apiSuccess {Object} book the message entry object for <code>isbn</code>
+ * @apiSuccess {string} book.isbn13 <code>isbn</code>
+ * @apiSuccess {string} book.authors The author(s) associated with <code>isbn</code>
+ * @apiSuccess {number} book.publication_year The publication year associated with <code>isbn</code>
+ * @apiSuccess {string} book.original_title The original title associated with <code>isbn</code>
+ * @apiSuccess {string} book.title The title associated with <code>isbn</code>
+ * @apiSuccess {number} book.rating_1 The number of 1 star ratings associated with <code>isbn</code>
+ * @apiSuccess {number} book.rating_2 The number of 2 star ratings associated with <code>isbn</code>
+ * @apiSuccess {number} book.rating_3 The number of 3 star ratings associated with <code>isbn</code>
+ * @apiSuccess {number} book.rating_4 The number of 4 star ratings associated with <code>isbn</code>
+ * @apiSuccess {number} book.rating_5 The number of 5 star ratings associated with <code>isbn</code>
+ * @apiSuccess {number} books.rating_count the total number of ratings the book has
+ * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} book.image_url The image URL associated with <code>isbn</code>
+ * @apiSuccess {string|null} book.image_small_url The small image URL associated with <code>isbn</code>
+ * @apiSuccess {string} book.formatted the aggregate of the book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
+ * @apiError (404: ISBN13 Not Found) {string} message "ISBN not found"
+ */
 bookRouter.get(
-    '/:isbn',
+    '/:isbn13',
     mwValidISBN13,
     (request: Request, response: Response) => {
         const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
@@ -87,13 +125,13 @@ bookRouter.get(
             JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
             JOIN RATINGS ON BOOKS.id = RATINGS.id 
             WHERE isbn13 = $1;`;
-        const values = [request.params.isbn];
+        const values = [request.params.isbn13];
 
         pool.query(query, values)
             .then((result) => {
                 if (result.rowCount == 1) {
                     response.send({
-                        entry: formatKeep(result.rows[0]),
+                        book: formatKeep(result.rows[0]),
                     });
                 } else {
                     response.status(404).send({
@@ -112,6 +150,41 @@ bookRouter.get(
     }
 );
 
+/**
+ * @api {get} /c/books Request to retrieve books by author
+ *
+ * @apiDescription Request to retrieve all book entries with <code>author</code>. Case-insensitive
+ *
+ * @apiName GetBooksByAuthor
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {string} author the author from which to retrieve all book entries containing the query
+ *
+ * @apiSuccess {Object[]} books the book entry objects of all books with <code>author</code>
+ * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} books.authors the author(s) associated with <code>author</code>
+ * @apiSuccess {number} books.publication_year the publication year associated with <code>author</code>
+ * @apiSuccess {string} books.original_title the original title associated with <code>author</code>
+ * @apiSuccess {string} books.title the title associated with the book
+ * @apiSuccess {number} books.rating_1 he number of 1 star ratings associated with <code>author</code>
+ * @apiSuccess {number} books.rating_2 he number of 2 star ratings associated with <code>author</code>
+ * @apiSuccess {number} books.rating_3 he number of 3 star ratings associated with <code>author</code>
+ * @apiSuccess {number} books.rating_4 he number of 4 star ratings associated with <code>author</code>
+ * @apiSuccess {number} books.rating_5 he number of 5 star ratings associated with <code>author</code>
+ * @apiSuccess {number} books.rating_count the total number of ratings the book has
+ * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} books.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} books.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} books.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Invalid Author) {String} message "Invalid or missing author  - please refer to documentation"
+ * @apiError (404: No Author) {String} message "No books found. Try a different author query."
+ */
 bookRouter.get(
     '/',
     mwValidAuthorQuery,
@@ -127,7 +200,7 @@ bookRouter.get(
             .then((result) => {
                 if (result.rowCount > 0) {
                     response.send({
-                        entries: result.rows.map(formatKeep),
+                        books: result.rows.map(formatKeep),
                     });
                 } else {
                     response.status(404).send({
@@ -147,6 +220,53 @@ bookRouter.get(
     }
 );
 
+/**
+ * @api {post} /c/books Request to add a book entry
+ *
+ * @apiDescription Request to add a book entry to the DB. The image and small image URLs are optional, but if you provide one, you must
+ * provide both.
+ *
+ * @apiName AddBook
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiBody {number} isbn13 the book's ISBN *unique
+ * @apiBody {string} authors the book's author(s)
+ * @apiBody {number} publication_year the book's publication year
+ * @apiBody {string} original_title the book's original title
+ * @apiBody {string} title the book's current title
+ * @apiBody {number} rating_1 the number of 1 star ratings towards the book
+ * @apiBody {number} rating_2 the number of 2 star ratings towards the book
+ * @apiBody {number} rating_3 the number of 3 star ratings towards the book
+ * @apiBody {number} rating_4 the number of 4 star ratings towards the book
+ * @apiBody {number} rating_5 the number of 5 star ratings towards the book
+ * @apiBody {string} [image_url] the book's image URL
+ * @apiBody {string} [image_small_url] the book's small image URL
+ *
+ * @apiSuccess (Success 201) {Object} book the newly created book
+ * @apiSuccess {string} book.isbn13 <code>isbn13</code>
+ * @apiSuccess {string} book.authors <code>isbn13</code>
+ * @apiSuccess {number} book.publication_year <code>isbn13</code>
+ * @apiSuccess {string} book.original_title <code>isbn13</code>
+ * @apiSuccess {string} book.title <code>isbn13</code>
+ * @apiSuccess {number} book.rating_1 <code>rating_1</code>
+ * @apiSuccess {number} book.rating_2 <code>rating_2</code>
+ * @apiSuccess {number} book.rating_3 <code>rating_3</code>
+ * @apiSuccess {number} book.rating_4 <code>rating_4</code>
+ * @apiSuccess {number} book.rating_5 <code>rating_5</code>
+ * @apiSuccess {number} book.rating_count the total number of ratings the book has
+ * @apiSuccess {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} book.image_url <code>image_url</code> if provided, <code>null</code> if not
+ * @apiSuccess {string|null} book.image_small_url <code>image_small_url</code> if provided, <code>null</code> if not
+ * @apiSuccess {string} book.formatted the aggregate of the book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Missing/Malformed Parameters) {string} message "Missing or malformed required information - please refer to documentation"
+ * @apiError (400: ISBN exists) {string} message "ISBN exists"
+ */
 bookRouter.post(
     '/',
     mwValidBookEntry,
