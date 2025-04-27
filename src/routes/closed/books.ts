@@ -4,7 +4,6 @@ import { pool, validationFunctions } from '../../core/utilities';
 const bookRouter: Router = express.Router();
 
 const isStringProvided = validationFunctions.isStringProvided;
-const isNumberProvided = validationFunctions.isNumberProvided;
 const validISBN13 = validationFunctions.validISBN13;
 const validRatingOrYear = validationFunctions.validRatingOrYear;
 
@@ -25,6 +24,23 @@ function mwValidISBN13(
         response.status(400).send({
             message:
                 'Invalid or missing ISBN13 - please refer to documentation',
+        });
+    }
+}
+
+function mwValidAuthorQuery(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    const author: string = request.query.author as string;
+    if (isStringProvided(author)) {
+        next();
+    } else {
+        console.error('Invalid or missing Author');
+        response.status(400).send({
+            message:
+                'Invalid or missing Author - please refer to documentation',
         });
     }
 }
@@ -96,35 +112,40 @@ bookRouter.get(
     }
 );
 
-bookRouter.get('/', (request: Request, response: Response) => {
-    const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, image_url, image_small_url 
-        FROM BOOKS 
-        JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
-        JOIN RATINGS ON BOOKS.id = RATINGS.id 
-        WHERE authors LIKE "%$1%";`;
-    const values = [request.query.author];
+bookRouter.get(
+    '/',
+    mwValidAuthorQuery,
+    (request: Request, response: Response) => {
+        const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, image_url, image_small_url 
+            FROM BOOKS 
+            JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
+            JOIN RATINGS ON BOOKS.id = RATINGS.id 
+            WHERE UPPER(BOOKAUTHORS.authors) LIKE UPPER('%'||$1||'%');`;
+        const values = [request.query.author];
 
-    pool.query(query, values)
-        .then((result) => {
-            if (result.rowCount > 0) {
-                response.send({
-                    entries: result.rows.map(formatKeep),
+        pool.query(query, values)
+            .then((result) => {
+                if (result.rowCount > 0) {
+                    response.send({
+                        entries: result.rows.map(formatKeep),
+                    });
+                } else {
+                    response.status(404).send({
+                        message:
+                            'No books found. Try a different author query.',
+                    });
+                }
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on GET /');
+                console.error(error);
+                response.status(500).send({
+                    message: 'server error - contact support',
                 });
-            } else {
-                response.status(404).send({
-                    message: 'No books found. Try a different author query.',
-                });
-            }
-        })
-        .catch((error) => {
-            //log the error
-            console.error('DB Query error on GET /');
-            console.error(error);
-            response.status(500).send({
-                message: 'server error - contact support',
             });
-        });
-});
+    }
+);
 
 bookRouter.post(
     '/',
