@@ -68,16 +68,16 @@ DROP TABLE IF EXISTS RATINGS;
 CREATE TABLE RATINGS
 (
     id INT NOT NULL,
-    rating_1 INT NOT NULL,
-    rating_2 INT NOT NULL,
-    rating_3 INT NOT NULL,
-    rating_4 INT NOT NULL,
-    rating_5 INT NOT NULL,
+    rating_1 INT DEFAULT 0,
+    rating_2 INT DEFAULT 0,
+    rating_3 INT DEFAULT 0,
+    rating_4 INT DEFAULT 0,
+    rating_5 INT DEFAULT 0,
     rating_count INT
         GENERATED ALWAYS AS (rating_1 + rating_2 + rating_3 + rating_4 + rating_5) STORED,
     rating_avg NUMERIC(3, 2)
         GENERATED ALWAYS AS
-        (cast((rating_1 * 1 + rating_2 * 2 + rating_3 * 3 + rating_4 * 4 + rating_5 * 5) as decimal) / (rating_1 + rating_2 + rating_3 + rating_4 + rating_5)) STORED,
+        (cast((rating_1 * 1 + rating_2 * 2 + rating_3 * 3 + rating_4 * 4 + rating_5 * 5) as decimal) / COALESCE(NULLIF((rating_1 + rating_2 + rating_3 + rating_4 + rating_5), 0), 1)) STORED,
     FOREIGN KEY (id) REFERENCES BOOKS2(id)
 );
 
