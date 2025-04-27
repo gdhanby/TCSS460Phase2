@@ -91,7 +91,7 @@ function mwValidBookEntry(
  * @apiName GetBookByISBN
  * @apiGroup Books
  *
- * @apiParam {string} the ISBN13 to look up
+ * @apiParam {string} isbn13 the ISBN13 to look up
  *
  * @apiSuccess {Object} book the message entry object for <code>isbn</code>
  * @apiSuccess {string} book.isbn13 <code>isbn</code>
