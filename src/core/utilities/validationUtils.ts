@@ -36,12 +36,17 @@ function isNumberProvided(candidate: any): boolean {
 /**
  * Helper
  * @param x data value to check the type of
- * @returns true if the type of x is a number, false otherise
+ * @returns true if the type of x is a number, false otherwise
  */
 function isNumber(x: any): x is number {
     return typeof x === 'number';
 }
 
+/**
+ * Validates ISBN13. Checks for proper type, length, & whether it consists of only digits.
+ * @param isbn data to validate
+ * @returns true if isbn is non-null, can be parsed as a number, 13 digits, and is positive.
+ */
 function validISBN13(isbn: string | null): boolean {
     return (
         isbn != null &&
@@ -51,6 +56,11 @@ function validISBN13(isbn: string | null): boolean {
     );
 }
 
+/**
+ * Validates rating counts and publication year. Checks for proper type, & whether it is positive
+ * @param rating data to validate
+ * @returns true if rating is non-null, can be parsed as a number, and is positive.
+ */
 function validRatingOrYear(rating: number) {
     return (
         rating != null &&
