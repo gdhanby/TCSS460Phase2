@@ -45,35 +45,40 @@ CREATE TABLE BOOKS (id INT PRIMARY KEY,
 DROP TABLE IF EXISTS BOOKS2;
 CREATE TABLE BOOKS2
 (
-  isbn13 BIGINT NOT NULL,
-  id INT NOT NULL,
-  publication_year INT NOT NULL,
-  original_title TEXT NOT NULL,
-  title TEXT NOT NULL,
-  image_url TEXT NOT NULL,
-  image_small_url TEXT NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE (isbn13)
+    id INT NOT NULL GENERATED ALWAYS AS IDENTITY,
+    isbn13 BIGINT NOT NULL,
+    publication_year INT NOT NULL,
+    original_title TEXT NOT NULL,
+    title TEXT NOT NULL,
+    image_url TEXT,
+    image_small_url TEXT,
+    PRIMARY KEY (id),
+    UNIQUE (isbn13)
 );
 
 DROP TABLE IF EXISTS BOOKAUTHORS;
 CREATE TABLE BOOKAUTHORS
-(
-  authors TEXT NOT NULL,
-  id INT NOT NULL,
-  FOREIGN KEY (id) REFERENCES BOOKS2(id)
+( 
+    id INT NOT NULL,
+    authors TEXT NOT NULL,
+    FOREIGN KEY (id) REFERENCES BOOKS2(id)
 );
 
 DROP TABLE IF EXISTS RATINGS;
 CREATE TABLE RATINGS
 (
-  rating_1 INT NOT NULL,
-  rating_2 INT NOT NULL,
-  rating_3 INT NOT NULL,
-  rating_4 INT NOT NULL,
-  rating_5 INT NOT NULL,
-  id INT NOT NULL,
-  FOREIGN KEY (id) REFERENCES BOOKS2(id)
+    id INT NOT NULL,
+    rating_1 INT DEFAULT 0,
+    rating_2 INT DEFAULT 0,
+    rating_3 INT DEFAULT 0,
+    rating_4 INT DEFAULT 0,
+    rating_5 INT DEFAULT 0,
+    rating_count INT
+        GENERATED ALWAYS AS (rating_1 + rating_2 + rating_3 + rating_4 + rating_5) STORED,
+    rating_avg NUMERIC(3, 2)
+        GENERATED ALWAYS AS
+        (cast((rating_1 * 1 + rating_2 * 2 + rating_3 * 3 + rating_4 * 4 + rating_5 * 5) as decimal) / COALESCE(NULLIF((rating_1 + rating_2 + rating_3 + rating_4 + rating_5), 0), 1)) STORED,
+    FOREIGN KEY (id) REFERENCES BOOKS2(id)
 );
 
 
@@ -85,8 +90,8 @@ CSV HEADER;
 
 
 -- after copying csv file into books, we populate the other tables --
-INSERT INTO BOOKS2 (id, isbn13, publication_year, original_title, title, image_url, image_small_url)
-SELECT id, isbn13, publication_year, original_title, title, image_url, image_small_url
+INSERT INTO BOOKS2 (isbn13, publication_year, original_title, title, image_url, image_small_url)
+SELECT isbn13, publication_year, original_title, title, image_url, image_small_url
 FROM BOOKS;
 
 INSERT INTO RATINGS (id, rating_1, rating_2, rating_3, rating_4, rating_5)
@@ -95,17 +100,6 @@ FROM BOOKS;
 
 INSERT INTO BOOKAUTHORS (id, authors)
 SELECT id, authors FROM BOOKS;
-
-
--- we want books2 to auto increment ids so let's change it to do that --
-ALTER TABLE BOOKS2
-ALTER COLUMN id DROP DEFAULT,
-ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
--- but wait, it'll ignore the existing ids and start generating from 1, we need to update the sequence --
-SELECT setval(pg_get_serial_sequence('books', 'id'), (SELECT MAX(id) FROM books));
-/* setval takes two arguments-the thing to be updated, and the new value. 
-the pg_get_serial_sequence bit fetches the name of the internal sequence used for the ids, 
-the select statement grabs the max id, so the sequence can pick up where the ids in the csv left off. */
 
 
 -- now let's get rid of that ugly monolithic table and rename our brand new shiny (and slimmer) one --

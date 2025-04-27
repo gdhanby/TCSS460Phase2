@@ -42,6 +42,23 @@ function isNumber(x: any): x is number {
     return typeof x === 'number';
 }
 
+function validISBN13(isbn: string | null): boolean {
+    return (
+        isbn != null &&
+        isNumber(parseInt(isbn)) &&
+        isbn.toString().length == 13 &&
+        /^\d+$/.test(isbn.toString())
+    );
+}
+
+function validRatingOrYear(rating: number) {
+    return (
+        rating != null &&
+        isNumber(parseInt(rating.toString())) &&
+        /^\d+$/.test(rating.toString())
+    );
+}
+
 // Feel free to add your own validations functions!
 // for example: isNumericProvided, isValidPassword, isValidEmail, etc
 // don't forget to export any
@@ -49,6 +66,8 @@ function isNumber(x: any): x is number {
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
+    validISBN13,
+    validRatingOrYear,
 };
 
 export { validationFunctions };
