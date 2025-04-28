@@ -9,13 +9,13 @@ function isString(candidate: any): candidate is string {
 }
 
 /**
- * Checks the parameter to see if it is a a String with a length greater than 0.
+ * Checks the parameter to see if it is a a String with a length greater than 0. Also makes sure it isn't completely whitespace.
  *
  * @param {any} candidate the value to check
  * @returns true if the parameter is a String with a length greater than 0, false otherwise
  */
 function isStringProvided(candidate: any): boolean {
-    return isString(candidate) && candidate.length > 0;
+    return isString(candidate) && candidate.trim().length > 0;
 }
 
 /**
