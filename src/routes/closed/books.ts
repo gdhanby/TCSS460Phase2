@@ -93,21 +93,21 @@ function mwValidBookEntry(
  *
  * @apiParam {string} isbn13 the ISBN13 to look up
  *
- * @apiSuccess {Object} book the message entry object for <code>isbn</code>
- * @apiSuccess {string} book.isbn13 <code>isbn</code>
- * @apiSuccess {string} book.authors The author(s) associated with <code>isbn</code>
- * @apiSuccess {number} book.publication_year The publication year associated with <code>isbn</code>
- * @apiSuccess {string} book.original_title The original title associated with <code>isbn</code>
- * @apiSuccess {string} book.title The title associated with <code>isbn</code>
- * @apiSuccess {number} book.rating_1 The number of 1 star ratings associated with <code>isbn</code>
- * @apiSuccess {number} book.rating_2 The number of 2 star ratings associated with <code>isbn</code>
- * @apiSuccess {number} book.rating_3 The number of 3 star ratings associated with <code>isbn</code>
- * @apiSuccess {number} book.rating_4 The number of 4 star ratings associated with <code>isbn</code>
- * @apiSuccess {number} book.rating_5 The number of 5 star ratings associated with <code>isbn</code>
- * @apiSuccess {number} books.rating_count the total number of ratings the book has
- * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
- * @apiSuccess {string|null} book.image_url The image URL associated with <code>isbn</code>
- * @apiSuccess {string|null} book.image_small_url The small image URL associated with <code>isbn</code>
+ * @apiSuccess {Object} book the book entry object for <code>isbn13</code>
+ * @apiSuccess {string} book.isbn13 <code>isbn13</code>
+ * @apiSuccess {string} book.authors the author(s) associated with <code>isbn13</code>
+ * @apiSuccess {number} book.publication_year the publication year associated with <code>isbn13</code>
+ * @apiSuccess {string} book.original_title the original title associated with <code>isbn13</code>
+ * @apiSuccess {string} book.title the title associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_1 the number of 1 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_2 the number of 2 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_3 the number of 3 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_4 the number of 4 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_5 the number of 5 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_count the total number of ratings the book has
+ * @apiSuccess {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} book.image_url the image URL associated with <code>isbn13</code>
+ * @apiSuccess {string|null} book.image_small_url the small image URL associated with <code>isbn13</code>
  * @apiSuccess {string} book.formatted the aggregate of the book as a string with format:
  *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
@@ -164,15 +164,15 @@ bookRouter.get(
  *
  * @apiSuccess {Object[]} books the book entry objects of all books with <code>author</code>
  * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
- * @apiSuccess {string} books.authors the author(s) associated with <code>author</code>
- * @apiSuccess {number} books.publication_year the publication year associated with <code>author</code>
- * @apiSuccess {string} books.original_title the original title associated with <code>author</code>
- * @apiSuccess {string} books.title the title associated with the book
- * @apiSuccess {number} books.rating_1 he number of 1 star ratings associated with <code>author</code>
- * @apiSuccess {number} books.rating_2 he number of 2 star ratings associated with <code>author</code>
- * @apiSuccess {number} books.rating_3 he number of 3 star ratings associated with <code>author</code>
- * @apiSuccess {number} books.rating_4 he number of 4 star ratings associated with <code>author</code>
- * @apiSuccess {number} books.rating_5 he number of 5 star ratings associated with <code>author</code>
+ * @apiSuccess {string} books.authors the author(s) associated with the book entry
+ * @apiSuccess {number} books.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} books.original_title the original title associated with the book entry
+ * @apiSuccess {string} books.title the title associated with the book entry
+ * @apiSuccess {number} books.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_5 the number of 5 star ratings associated with the book entry
  * @apiSuccess {number} books.rating_count the total number of ratings the book has
  * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
  * @apiSuccess {string|null} books.image_url the image URL associated with the book if present. Null if not
@@ -245,21 +245,21 @@ bookRouter.get(
  * @apiBody {string} [image_small_url] the book's small image URL
  *
  * @apiSuccess (Success 201) {Object} book the newly created book
- * @apiSuccess {string} book.isbn13 <code>isbn13</code>
- * @apiSuccess {string} book.authors <code>isbn13</code>
- * @apiSuccess {number} book.publication_year <code>isbn13</code>
- * @apiSuccess {string} book.original_title <code>isbn13</code>
- * @apiSuccess {string} book.title <code>isbn13</code>
- * @apiSuccess {number} book.rating_1 <code>rating_1</code>
- * @apiSuccess {number} book.rating_2 <code>rating_2</code>
- * @apiSuccess {number} book.rating_3 <code>rating_3</code>
- * @apiSuccess {number} book.rating_4 <code>rating_4</code>
- * @apiSuccess {number} book.rating_5 <code>rating_5</code>
- * @apiSuccess {number} book.rating_count the total number of ratings the book has
- * @apiSuccess {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
- * @apiSuccess {string|null} book.image_url <code>image_url</code> if provided, <code>null</code> if not
- * @apiSuccess {string|null} book.image_small_url <code>image_small_url</code> if provided, <code>null</code> if not
- * @apiSuccess {string} book.formatted the aggregate of the book as a string with format:
+ * @apiSuccess (Success 201) {string} book.isbn13 <code>isbn13</code>
+ * @apiSuccess (Success 201) {string} book.authors <code>authors</code>
+ * @apiSuccess (Success 201) {number} book.publication_year <code>publication_year</code>
+ * @apiSuccess (Success 201) {string} book.original_title <code>original_title</code>
+ * @apiSuccess (Success 201) {string} book.title <code>title</code>
+ * @apiSuccess (Success 201) {number} book.rating_1 <code>rating_1</code>
+ * @apiSuccess (Success 201) {number} book.rating_2 <code>rating_2</code>
+ * @apiSuccess (Success 201) {number} book.rating_3 <code>rating_3</code>
+ * @apiSuccess (Success 201) {number} book.rating_4 <code>rating_4</code>
+ * @apiSuccess (Success 201) {number} book.rating_5 <code>rating_5</code>
+ * @apiSuccess (Success 201) {number} book.rating_count the total number of ratings the book has
+ * @apiSuccess (Success 201) {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess (Success 201) {string|null} book.image_url <code>image_url</code> if provided, <code>null</code> if not
+ * @apiSuccess (Success 201) {string|null} book.image_small_url <code>image_small_url</code> if provided, <code>null</code> if not
+ * @apiSuccess (Success 201) {string} book.formatted the aggregate of the book as a string with format:
  *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
