@@ -34,7 +34,7 @@ function mwValidAuthorQuery(
     next: NextFunction
 ) {
     const author: string = request.query.author as string;
-    if (isStringProvided(author)) {
+    if (isStringProvided(author.trim())) {
         next();
     } else {
         console.error('Invalid or missing Author');
