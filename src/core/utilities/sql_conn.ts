@@ -1,6 +1,5 @@
 // Obtain a Pool of DB connections.
 import { Pool, PoolConfig } from 'pg';
-
 const pgConfig: PoolConfig =
     process.env.PGHOST !== undefined
         ? {
