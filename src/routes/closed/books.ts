@@ -353,4 +353,15 @@ bookRouter.post(
     }
 );
 
+bookRouter.patch(
+    '/:isbn13',
+    mwValidISBN13,
+    (request: Request, response: Response) => {
+        /* Route for updating rating counts of book. user provides isbn13 as route parameter, 
+    and request body has which counts they want to update (rating_1, rating_2, etc.). They
+    should be able to provide only the ones they want to update, and the value in the DB will
+    be overwritten. TODO: validation of new rating counts in body.*/
+    }
+);
+
 export { bookRouter };
