@@ -488,7 +488,6 @@ bookRouter.patch(
             WHERE isbn13 = $6;`;
         pool.query(query, ratingsvalue)
             .then((result) => {
-                console.log(result.rowCount);
                 if (result.rowCount != 0) {
                     response.status(200).send({
                         message: 'Rating change completed!',
