@@ -64,7 +64,7 @@ function mwValidRatingsEntry(
         console.error('Missing rating information!');
         response.status(400).send({
             message:
-                'Missing Rating information. Please refer to documentation',
+                'Missing or malformed rating information. Please refer to documentation',
         });
     }
 }
