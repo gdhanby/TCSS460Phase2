@@ -5,6 +5,7 @@ const bookRouter: Router = express.Router();
 
 const isStringProvided = validationFunctions.isStringProvided;
 const validISBN13 = validationFunctions.validISBN13;
+const validRating = validationFunctions.validRatingValue;
 const validRatingOrYear = validationFunctions.validRatingOrYear;
 
 const formatKeep = (resultRow) => ({
@@ -44,7 +45,27 @@ function mwValidAuthorQuery(
         });
     }
 }
-
+function mwValidRatingsEntry(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    if (
+        validRating(request.body.rating_1) &&
+        validRating(request.body.rating_2) &&
+        validRating(request.body.rating_3) &&
+        validRating(request.body.rating_4) &&
+        validRating(request.body.rating_5)
+    ) {
+        next();
+    } else {
+        console.error('Missing rating information!');
+        response.status(400).send({
+            message:
+                'Missing Rating information. Please refer to documentation',
+        });
+    }
+}
 function mwValidBookEntry(
     request: Request,
     response: Response,
@@ -356,11 +377,47 @@ bookRouter.post(
 bookRouter.patch(
     '/:isbn13',
     mwValidISBN13,
+    mwValidRatingsEntry,
     (request: Request, response: Response) => {
         /* Route for updating rating counts of book. user provides isbn13 as route parameter, 
         and request body has which counts they want to update (rating_1, rating_2, etc.). They
         should be able to provide only the ones they want to update, and the value in the DB will
         be overwritten. TODO: validation of new rating counts in body. */
+        const ratingsvalue = [
+            request.body.rating_1 || 0,
+            request.body.rating_2 || 0,
+            request.body.rating_3 || 0,
+            request.body.rating_4 || 0,
+            request.body.rating_5 || 0,
+            request.params.isbn13,
+        ];
+
+        const query = `UPDATE ratings r SET rating_1 = rating_1 + $1, rating_2 = rating_2 + $2, rating_3 = rating_3 + $3, rating_4 = rating_4 + $4, rating_5 = rating_5 + $5 
+            FROM BOOKAUTHORS ba
+            JOIN BOOKS b ON ba.id = b.id
+            WHERE isbn13 = $6;`;
+        pool.query(query, ratingsvalue)
+            .then((result) => {
+                console.log(result.rowCount);
+                if (result.rowCount != 0) {
+                    response.status(200).send({
+                        message: 'Rating change completed!',
+                        //book: formatKeep(result.rows[0]),
+                    });
+                } else {
+                    response.status(404).send({
+                        message: 'ISBN does not exist!',
+                    });
+                }
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on PATCH /');
+                console.error(error);
+                response.status(500).send({
+                    message: 'server error - contact support',
+                });
+            });
     }
 );
 
