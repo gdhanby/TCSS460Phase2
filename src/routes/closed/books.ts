@@ -6,7 +6,7 @@ const bookRouter: Router = express.Router();
 const isStringProvided = validationFunctions.isStringProvided;
 const isNumberProvided = validationFunctions.isNumberProvided;
 const validISBN13 = validationFunctions.validISBN13;
-const validRating = validationFunctions.validRatingValue;
+const validRatingDelta = validationFunctions.validRatingDelta;
 const validRatingOrYear = validationFunctions.validRatingOrYear;
 
 const formatKeep = (resultRow) => ({
@@ -46,17 +46,18 @@ function mwValidAuthorQuery(
         });
     }
 }
+
 function mwValidRatingsEntry(
     request: Request,
     response: Response,
     next: NextFunction
 ) {
     if (
-        validRating(request.body.rating_1) &&
-        validRating(request.body.rating_2) &&
-        validRating(request.body.rating_3) &&
-        validRating(request.body.rating_4) &&
-        validRating(request.body.rating_5)
+        validRatingDelta(request.body.rating_1) &&
+        validRatingDelta(request.body.rating_2) &&
+        validRatingDelta(request.body.rating_3) &&
+        validRatingDelta(request.body.rating_4) &&
+        validRatingDelta(request.body.rating_5)
     ) {
         next();
     } else {
@@ -67,6 +68,7 @@ function mwValidRatingsEntry(
         });
     }
 }
+
 function mwValidBookEntry(
     request: Request,
     response: Response,

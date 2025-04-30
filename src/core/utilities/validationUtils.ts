@@ -72,15 +72,16 @@ function validRatingOrYear(rating: number) {
 // Feel free to add your own validations functions!
 // for example: isNumericProvided, isValidPassword, isValidEmail, etc
 // don't forget to export any
-function validRatingValue(rating: number) {
+function validRatingDelta(rating: number) {
     return rating != null && (isNumber(rating) || rating == 0);
 }
+
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
     validISBN13,
     validRatingOrYear,
-    validRatingValue,
+    validRatingDelta,
 };
 
 export { validationFunctions };
