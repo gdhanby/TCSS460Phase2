@@ -468,45 +468,51 @@ bookRouter.patch(
     '/:isbn13',
     mwValidISBN13,
     mwValidRatingsEntry,
-    (request: Request, response: Response) => {
+    async (request: Request, response: Response) => {
         /* Route for updating rating counts of book. user provides isbn13 as route parameter, 
         and request body has which counts they want to update (rating_1, rating_2, etc.). They
         should be able to provide only the ones they want to update, and the value in the DB will
-        be overwritten. TODO: validation of new rating counts in body. */
-        const ratingsvalue = [
-            request.body.rating_1 || 0,
-            request.body.rating_2 || 0,
-            request.body.rating_3 || 0,
-            request.body.rating_4 || 0,
-            request.body.rating_5 || 0,
-            request.params.isbn13,
-        ];
+        be overwritten. */
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const ratingQuery = `UPDATE ratings SET rating_1 = rating_1 + $1, rating_2 = rating_2 + $2, rating_3 = rating_3 + $3, rating_4 = rating_4 + $4, rating_5 = rating_5 + $5 
+                                WHERE id = (SELECT id 
+                                            FROM BOOKS
+                                            WHERE isbn13 = $6);`;
+            const ratingsValues = [
+                request.body.rating_1 || 0,
+                request.body.rating_2 || 0,
+                request.body.rating_3 || 0,
+                request.body.rating_4 || 0,
+                request.body.rating_5 || 0,
+                request.params.isbn13,
+            ];
 
-        const query = `UPDATE ratings r SET rating_1 = rating_1 + $1, rating_2 = rating_2 + $2, rating_3 = rating_3 + $3, rating_4 = rating_4 + $4, rating_5 = rating_5 + $5 
-            FROM BOOKAUTHORS ba
-            JOIN BOOKS b ON ba.id = b.id
-            WHERE isbn13 = $6;`;
-        pool.query(query, ratingsvalue)
-            .then((result) => {
-                if (result.rowCount != 0) {
-                    response.status(200).send({
-                        message: 'Rating change completed!',
-                        //book: formatKeep(result.rows[0]),
-                    });
-                } else {
-                    response.status(404).send({
-                        message: 'ISBN does not exist!',
-                    });
-                }
-            })
-            .catch((error) => {
-                //log the error
-                console.error('DB Query error on PATCH /');
-                console.error(error);
-                response.status(500).send({
-                    message: 'server error - contact support',
-                });
+            // TODO: make sure the ratings cant go into the negatives.
+            await client.query(ratingQuery, ratingsValues);
+
+            const infoSelect = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5,
+                rating_count, rating_avg, image_url, image_small_url
+                FROM BOOKS
+                JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id
+                JOIN RATINGS ON BOOKS.id = RATINGS.id
+                WHERE isbn13 = $1`;
+            const result = await client.query(infoSelect, [
+                request.params.isbn13,
+            ]);
+            response.status(200).send({
+                book: formatKeep(result.rows[0]),
             });
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('server error on patch whoops');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        }
     }
 );
 
