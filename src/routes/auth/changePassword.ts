@@ -33,6 +33,7 @@ changePasswordRouter2.patch(
             isStringProvided(request.body.email) &&
             isStringProvided(request.body.oldPassword)
         ) {
+            console.log('1');
             next();
         } else {
             response.status(404).send({
@@ -42,6 +43,7 @@ changePasswordRouter2.patch(
     },
     (request: AuthRequest, response: Response, next: NextFunction) => {
         if (isStringProvided(request.body.newPassword)) {
+            console.log('2');
             next();
         } else {
             response.status(404).send({
@@ -50,11 +52,13 @@ changePasswordRouter2.patch(
         }
     },
     (request: AuthRequest, response: Response, next: NextFunction) => {
-        const theQuery = `SELECT salted_hash, salt, Account_Credential.account_id, account.email, account.firstname, account.lastname, account.phone, account.username, account.account_role FROM Account_Credential
+        const theQuery = `SELECT salted_hash, salt, Account_Credential.account_id, account.Email, account.firstname, account.lastname, account.phone, account.username, account.account_role FROM Account_Credential
                       INNER JOIN Account ON
                       Account_Credential.account_id=Account.account_id 
-                      WHERE Account.email=$1`;
+                      WHERE Account.Email=$1`;
         const values = [request.body.email];
+        console.log('3');
+        console.log(values);
         pool.query(theQuery, values).then((result) => {
             if (result.rowCount == 0) {
                 console.error('No user found with given email.');
@@ -69,8 +73,10 @@ changePasswordRouter2.patch(
                 });
                 return;
             }
+            console.log(result.rows[0]);
             const salt = result.rows[0].salt;
             const storedSaltedHash = result.rows[0].salted_hash;
+            console.log(request.body.oldPassword);
             const providedSaltedHash = generateHash(
                 request.body.oldPassword,
                 salt
@@ -87,12 +93,15 @@ changePasswordRouter2.patch(
         });
     },
     (request: IUserRequest, response: Response, next: NextFunction) => {
-        const theSelectQuery = `SELECT Account_ID FROM Account_Credential
-        WHERE Email = $1;`;
-        const selectValues = [request.body.Email];
+        const theSelectQuery = `SELECT * FROM Account
+        WHERE UPPER(Email) LIKE UPPER('%'||$1||'%');`;
+        const selectValues = [request.body.email];
+        console.log(selectValues);
         pool.query(theSelectQuery, selectValues)
             .then((result) => {
                 request.id = result.rows[0].account_id;
+                request.body.firstname = result.rows[0].firstname;
+                request.body.email = result.rows[0].email;
                 next();
             })
             .catch((error) => {
@@ -111,9 +120,8 @@ changePasswordRouter2.patch(
             if (result.rowCount == 1) {
                 const accessToken = jwt.sign(
                     {
-                        name: result.rows[0].firstname,
-                        role: result.rows[0].account_role,
-                        id: result.rows[0].account_id,
+                        name: request.body.firstname,
+                        id: request.id,
                     },
                     key.secret,
                     {
@@ -123,9 +131,9 @@ changePasswordRouter2.patch(
                 response.json({
                     accessToken,
                     user: {
-                        id: result.rows[0].account_id,
-                        email: result.rows[0].email,
-                        name: result.rows[0].firstname,
+                        id: request.id,
+                        email: request.body.email,
+                        name: request.body.firstname,
                         role: 'Admin',
                     },
                 });
