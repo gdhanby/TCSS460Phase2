@@ -489,7 +489,28 @@ bookRouter.patch(
                 request.params.isbn13,
             ];
 
-            // TODO: make sure the ratings cant go into the negatives.
+            // Retrieve the current ratings values
+            const currentRatingsQuery = `SELECT rating_1, rating_2, rating_3, rating_4, rating_5
+                                        FROM ratings WHERE id = (SELECT id
+                                                                FROM BOOKS
+                                                                WHERE isbn13 = $1);`;
+            const currentRatingsResult = await client.query(
+                currentRatingsQuery,
+                [request.params.isbn13]
+            );
+            const currentRatings = currentRatingsResult.rows[0];
+
+            // Check if changes will result in a negative number of ratings
+            for (const key in currentRatings) {
+                if (currentRatings[key] + ratingsValues[key] < 0) {
+                    await client.query('ROLLBACK');
+                    response.status(422).send({
+                        message:
+                            'Cannot perform changes - will result in a negative number of ratings',
+                    });
+                }
+            }
+
             await client.query(ratingQuery, ratingsValues);
 
             const infoSelect = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5,
