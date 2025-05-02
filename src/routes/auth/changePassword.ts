@@ -18,7 +18,7 @@ export interface IUserRequest extends Request {
 export interface AuthRequest extends Request {
     auth: Auth;
 }
-const changePasswordRouter: Router = express.Router();
+const changePasswordRouter2: Router = express.Router();
 const isStringProvided = validationFunctions.isStringProvided;
 const generateHash = credentialingFunctions.generateHash;
 const generateSalt = credentialingFunctions.generateSalt;
@@ -26,12 +26,7 @@ const generateSalt = credentialingFunctions.generateSalt;
 const key = {
     secret: process.env.JSON_WEB_TOKEN,
 };
-changePasswordRouter.get('/example', (request: Request, response: Response) => {
-    response.status(201).send({
-        message: 'ok 2',
-    });
-});
-changePasswordRouter.patch(
+changePasswordRouter2.patch(
     '/changePassword',
     (request: AuthRequest, response: Response, next: NextFunction) => {
         if (
@@ -144,4 +139,4 @@ changePasswordRouter.patch(
         });
     }
 );
-export { changePasswordRouter };
+export { changePasswordRouter2 };
