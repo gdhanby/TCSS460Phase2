@@ -33,7 +33,6 @@ changePasswordRouter2.patch(
             isStringProvided(request.body.email) &&
             isStringProvided(request.body.oldPassword)
         ) {
-            console.log('1');
             next();
         } else {
             response.status(404).send({
@@ -43,7 +42,6 @@ changePasswordRouter2.patch(
     },
     (request: AuthRequest, response: Response, next: NextFunction) => {
         if (isStringProvided(request.body.newPassword)) {
-            console.log('2');
             next();
         } else {
             response.status(404).send({
@@ -57,8 +55,6 @@ changePasswordRouter2.patch(
                       Account_Credential.account_id=Account.account_id 
                       WHERE Account.Email=$1`;
         const values = [request.body.email];
-        console.log('3');
-        console.log(values);
         pool.query(theQuery, values).then((result) => {
             if (result.rowCount == 0) {
                 console.error('No user found with given email.');
@@ -73,10 +69,8 @@ changePasswordRouter2.patch(
                 });
                 return;
             }
-            console.log(result.rows[0]);
             const salt = result.rows[0].salt;
             const storedSaltedHash = result.rows[0].salted_hash;
-            console.log(request.body.oldPassword);
             const providedSaltedHash = generateHash(
                 request.body.oldPassword,
                 salt
@@ -96,7 +90,6 @@ changePasswordRouter2.patch(
         const theSelectQuery = `SELECT * FROM Account
         WHERE UPPER(Email) LIKE UPPER('%'||$1||'%');`;
         const selectValues = [request.body.email];
-        console.log(selectValues);
         pool.query(theSelectQuery, selectValues)
             .then((result) => {
                 request.id = result.rows[0].account_id;
