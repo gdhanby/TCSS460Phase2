@@ -1,102 +1,157 @@
-/**
- * @api {patch} /change_password Change the current user's password
- *
- * @apiDescription 
- * Allows an authenticated user to change their password. Uses the following steps:
- * - Verifies the current password is correct.
- * - Validates that both current and new passwords are provided.
- * - Hashes the new password using a new randomly generated salt.
- * - Replaces the existing salted hash and salt in the database.
- *
- * Passwords are stored securely using a salted SHA-512 hash.
- * 
- * The request must come from an authenticated user, with `request.id` populated by middleware.
- * 
- * @apiName PatchChangePassword
- * @apiGroup Auth
- *
- * @apiBody {String} currentPassword The user's current password.
- * @apiBody {String} newPassword The new password the user wants to set.
- *
- * @apiSuccess {String} message Confirmation of successful update.
- *
- * @apiError (400) MissingFields Both fields (currentPassword, newPassword) are required.
- * @apiError (401) IncorrectPassword Current password does not match the stored hash.
- * @apiError (404) UserNotFound No matching account found for the provided ID.
- * @apiError (500) ServerError Unexpected database or server error.
- */
+import express, { Request, Response, Router, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-import express, { Request, Response, Router } from 'express';
-import { pool, credentialingFunctions, validationFunctions } from '../../core/utilities';
+import {
+    pool,
+    validationFunctions,
+    credentialingFunctions,
+} from '../../core/utilities';
 
-const changePasswordRouter: Router = express.Router();
+export interface Auth {
+    email: string;
+    password: string;
+}
 
-// Helper functions for credentialing and validation
-const generateHash = credentialingFunctions.generateHash;
-const generateSalt = credentialingFunctions.generateSalt;
-const isStringProvided = validationFunctions.isStringProvided;
-
-// Extended request interface includes user ID set by auth middleware
-export interface AuthenticatedRequest extends Request {
+export interface IUserRequest extends Request {
     id: number;
 }
 
-changePasswordRouter.patch(
-    '/change-password',
-    async (request: AuthenticatedRequest, response: Response) => {
-        const { currentPassword, newPassword } = request.body;
+export interface AuthRequest extends Request {
+    auth: Auth;
+}
 
-        // Ensure both fields are provided
-        if (!isStringProvided(currentPassword) || !isStringProvided(newPassword)) {
-            return response.status(400).send({
-                message: 'Missing required fields: currentPassword and/or newPassword',
+const changePasswordRouter: Router = express.Router();
+
+const isStringProvided = validationFunctions.isStringProvided;
+const generateHash = credentialingFunctions.generateHash;
+const generateSalt = credentialingFunctions.generateSalt;
+
+const key = {
+    secret: process.env.JSON_WEB_TOKEN,
+};
+// NOTE: these AuthRequests don't need to be AuthRequests(?)
+
+changePasswordRouter.patch(
+    '/changePassword',
+    (request: AuthRequest, response: Response, next: NextFunction) => {
+        if (
+            isStringProvided(request.body.email) &&
+            isStringProvided(request.body.oldPassword)
+        ) {
+            next();
+        } else {
+            response.status(404).send({
+                message: 'Missing required login information.',
             });
         }
-
-        try {
-            // Query the user's stored hash and salt from the database
-            const query = `
-                SELECT salted_hash, salt
-                FROM Account_Credential
-                WHERE account_id = $1
-            `;
-            const values = [request.id];
-            const result = await pool.query(query, values);
-
-            // If no matching user, return 404
-            if (result.rowCount === 0) {
-                return response.status(404).send({ message: 'User not found' });
-            }
-
-            const { salted_hash: storedHash, salt } = result.rows[0];
-
-            // Hash the currentPassword using the stored salt
-            const providedHash = generateHash(currentPassword, salt);
-
-            // Compare it to the stored hash
-            if (providedHash !== storedHash) {
-                return response.status(401).send({ message: 'Current password is incorrect' });
-            }
-
-            // Generate a new salt and hash the new password
-            const newSalt = generateSalt(32);
-            const newHashedPassword = generateHash(newPassword, newSalt);
-
-            // Update the database with the new hash and salt
-            const updateQuery = `
-                UPDATE Account_Credential
-                SET salted_hash = $1, salt = $2
-                WHERE account_id = $3
-            `;
-            await pool.query(updateQuery, [newHashedPassword, newSalt, request.id]);
-
-            return response.status(200).send({ message: 'Password updated successfully' });
-
-        } catch (error) {
-            // Catch any unexpected server or database errors
-            console.error('Error updating password:', error);
-            return response.status(500).send({ message: 'Server error - contact support' });
+    },
+    (request: AuthRequest, response: Response, next: NextFunction) => {
+        if (isStringProvided(request.body.newPassword)) {
+            next();
+        } else {
+            response.status(404).send({
+                message: 'Missing new password information.',
+            });
         }
+    },
+    (request: AuthRequest, response: Response, next: NextFunction) => {
+        if (request.body.newPassword === request.body.oldPassword) {
+            response.status(400).send({
+                message: 'New password must not match old password.',
+            });
+        } else {
+            next();
+        }
+    },
+    (request: AuthRequest, response: Response, next: NextFunction) => {
+        const theQuery = `SELECT salted_hash, salt, Account_Credential.account_id, account.Email, account.firstname, account.lastname, account.phone, account.username, account.account_role FROM Account_Credential
+                      INNER JOIN Account ON
+                      Account_Credential.account_id = Account.account_id 
+                      WHERE Account.Email = $1`;
+        const values = [request.body.email];
+        pool.query(theQuery, values).then((result) => {
+            if (result.rowCount == 0) {
+                console.error('No user found with given email.');
+                response.status(400).send({
+                    message: 'Invalid Credentials.',
+                });
+                return;
+            } else if (result.rowCount > 1) {
+                console.error('Duplicate database entry error.');
+                response.status(500).send({
+                    message: 'DB error. Contact support.',
+                });
+                return;
+            }
+            const salt = result.rows[0].salt;
+            const storedSaltedHash = result.rows[0].salted_hash;
+            const providedSaltedHash = generateHash(
+                request.body.oldPassword,
+                salt
+            );
+            if (storedSaltedHash === providedSaltedHash) {
+                next();
+            } else {
+                console.error('Password hash does not match.');
+                response.status(400).send({
+                    message: 'Invalid user credentials.',
+                });
+                return;
+            }
+        });
+    },
+    (request: IUserRequest, response: Response, next: NextFunction) => {
+        const theSelectQuery = `SELECT * FROM Account
+        WHERE UPPER(Email) LIKE UPPER('%'||$1||'%');`;
+        const selectValues = [request.body.email];
+        pool.query(theSelectQuery, selectValues)
+            .then((result) => {
+                // Stashing account ID in request for use in next function
+                request.id = result.rows[0].account_id;
+                request.body.firstname = result.rows[0].firstname;
+                request.body.email = result.rows[0].email;
+                next();
+            })
+            .catch((error) => {
+                console.log(error);
+                // Maybe add a message status and send portion?
+            });
+    },
+    (request: IUserRequest, response: Response) => {
+        const salt = generateSalt(32);
+        const newSaltedHash = generateHash(request.body.newPassword, salt);
+        const theUpdateQuery = `UPDATE Account_Credential
+                                SET salted_hash = $1, salt = $2
+                                WHERE Account_ID = $3`;
+        const updateValues = [newSaltedHash, salt, request.id];
+        pool.query(theUpdateQuery, updateValues).then((result) => {
+            if (result.rowCount == 1) {
+                const accessToken = jwt.sign(
+                    {
+                        name: request.body.firstname,
+                        id: request.id,
+                    },
+                    key.secret,
+                    {
+                        expiresIn: '14 days',
+                    }
+                );
+                response.status(201).send({
+                    accessToken,
+                    user: {
+                        id: request.id,
+                        email: request.body.email,
+                        name: request.body.firstname,
+                        role: 'Admin',
+                    },
+                });
+            } else {
+                console.log('row count more than 1 or 0.');
+                response.status(400).send({
+                    message: 'Error on updating account information.',
+                });
+            }
+        });
     }
 );
 
