@@ -102,6 +102,50 @@ function mwValidBookEntry(
     }
 }
 
+// Doesn't necessarily *need* to be async, could just use Promise .then() .catch() pattern.
+// Function that makes sure rating deltas sent in won't take rating counts below 0 in the db.
+async function mwNegativeRatingPrevention(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    // Retrieve the current ratings values
+    const currentRatingsQuery = `SELECT rating_1, rating_2, rating_3, rating_4, rating_5
+                                FROM ratings WHERE id = (SELECT id
+                                                        FROM BOOKS
+                                                        WHERE isbn13 = $1);`;
+    const currentRatingsResult = await pool.query(currentRatingsQuery, [
+        request.params.isbn13,
+    ]);
+
+    const ratingsValues = [
+        request.body.rating_1 || 0,
+        request.body.rating_2 || 0,
+        request.body.rating_3 || 0,
+        request.body.rating_4 || 0,
+        request.body.rating_5 || 0,
+    ];
+
+    const currentRatings = currentRatingsResult.rows[0];
+    // Check if changes will result in a negative number of ratings
+    let idx = 0;
+    for (const key in currentRatings) {
+        if (currentRatings[key] + ratingsValues[idx] >= 0) {
+            idx++;
+            continue;
+        } else {
+            response.status(422).send({
+                message:
+                    'Cannot perform changes - will result in a negative number of ratings',
+            });
+            break;
+        }
+    }
+    if (!response.headersSent) {
+        next();
+    }
+}
+
 /**
  * @apiDefine JWT
  * @apiHeader {String} Authorization The string "Bearer " + a valid JSON Web Token (JWT).
@@ -468,6 +512,7 @@ bookRouter.patch(
     '/:isbn13',
     mwValidISBN13,
     mwValidRatingsEntry,
+    mwNegativeRatingPrevention,
     async (request: Request, response: Response) => {
         /* Route for updating rating counts of book. user provides isbn13 as route parameter, 
         and request body has which counts they want to update (rating_1, rating_2, etc.). They
@@ -488,28 +533,6 @@ bookRouter.patch(
                 request.body.rating_5 || 0,
                 request.params.isbn13,
             ];
-
-            // Retrieve the current ratings values
-            const currentRatingsQuery = `SELECT rating_1, rating_2, rating_3, rating_4, rating_5
-                                        FROM ratings WHERE id = (SELECT id
-                                                                FROM BOOKS
-                                                                WHERE isbn13 = $1);`;
-            const currentRatingsResult = await client.query(
-                currentRatingsQuery,
-                [request.params.isbn13]
-            );
-            const currentRatings = currentRatingsResult.rows[0];
-
-            // Check if changes will result in a negative number of ratings
-            for (const key in currentRatings) {
-                if (currentRatings[key] + ratingsValues[key] < 0) {
-                    await client.query('ROLLBACK');
-                    response.status(422).send({
-                        message:
-                            'Cannot perform changes - will result in a negative number of ratings',
-                    });
-                }
-            }
 
             await client.query(ratingQuery, ratingsValues);
 
