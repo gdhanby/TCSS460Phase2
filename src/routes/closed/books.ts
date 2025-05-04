@@ -593,22 +593,22 @@ bookRouter.post(
     }
 );
 /**
- * @api {patch} /c/books Request to change ratings of a book
+ * @api {patch} /c/books/:isbn13 Request to change ratings of a book
  *
- * @apiDescription Request to change ratings based off of <code>isbn13</code> number.
+ * @apiDescription Request to change ratings based of a book with <code>isbn13</code>.
  *
  * @apiName ChangeRatings
  * @apiGroup Books
  *
  * @apiUse JWT
  *
- * @apiParam {number} isbn13 the isbn-13 to look up
+ * @apiParam {number} isbn13 the isbn13 of the book to update
  *
- * @apiBody {number} rating_1 the number that indicates the change in ratings for 1 star ratings.
- * @apiBody {number} rating_2 the number that indicates the change in ratings for 2 star ratings.
- * @apiBody {number} rating_3 the number that indicates the change in ratings for 3 star ratings.
- * @apiBody {number} rating_4 the number that indicates the change in ratings for 4 star ratings.
- * @apiBody {number} rating_5 the number that indicates the change in ratings for 5 star ratings.
+ * @apiBody {number} [rating_1] the number that indicates the change in ratings for 1 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_2] the number that indicates the change in ratings for 2 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_3] the number that indicates the change in ratings for 3 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_4] the number that indicates the change in ratings for 4 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_5] the number that indicates the change in ratings for 5 star ratings. Only provide if changing the corresponding rating count.
  *
  * @apiSuccess (Success 200) {Object} book the book with modified ratings
  * @apiSuccess (Success 200) {string} book.isbn13 <code>isbn13</code>
@@ -630,7 +630,7 @@ bookRouter.post(
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
- * @apiError (400: Missing/Malformed ISBN-13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
+ * @apiError (400: Missing/Malformed ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (400: Missing/Malformed ratings information) {string} message "Missing or malformed rating information. Please refer to documentation"
  * @apiError (422: Negative ratings count from result) {string} message "Cannot perform changes - will result in a negative number of ratings"
  */
