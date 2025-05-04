@@ -632,6 +632,7 @@ bookRouter.post(
  *
  * @apiError (400: Missing/Malformed ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (400: Missing/Malformed ratings information) {string} message "Missing or malformed rating information. Please refer to documentation"
+ * @apiError (404: No book with ISBN13) {string} message "No book found to update. Try a different ISBN13"
  * @apiError (422: Negative ratings count from result) {string} message "Cannot perform changes - will result in a negative number of ratings"
  */
 bookRouter.patch(
@@ -679,9 +680,18 @@ bookRouter.patch(
             await client.query('ROLLBACK');
             console.error('server error on patch whoops');
             console.error(error);
-            response.status(500).send({
-                message: 'server error - contact support',
-            });
+            if (
+                error.message != undefined &&
+                (error.message as string).endsWith("(reading 'isbn13')")
+            ) {
+                response.status(404).send({
+                    message: 'No book found to update. Try a different ISBN13',
+                });
+            } else {
+                response.status(500).send({
+                    message: 'server error - contact support',
+                });
+            }
         }
     }
 );
