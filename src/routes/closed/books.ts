@@ -174,22 +174,22 @@ async function mwNegativeRatingPrevention(
  * @apiSuccess {number} pagination.limit the number of book objects to returned.
  * @apiSuccess {number} pagination.cursor the value that should be used on a preceding call to this route.
  *
- * @apiSuccess {Object[]} books the book entry objects of all bookS
- * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
- * @apiSuccess {string} books.authors the author(s) associated with the book entry
- * @apiSuccess {number} books.publication_year the publication year associated with the book entry
- * @apiSuccess {string} books.original_title the original title associated with the book entry
- * @apiSuccess {string} books.title the title associated with the book entry
- * @apiSuccess {number} books.rating_1 the number of 1 star ratings associated with the book entry
- * @apiSuccess {number} books.rating_2 the number of 2 star ratings associated with the book entry
- * @apiSuccess {number} books.rating_3 the number of 3 star ratings associated with the book entry
- * @apiSuccess {number} books.rating_4 the number of 4 star ratings associated with the book entry
- * @apiSuccess {number} books.rating_5 the number of 5 star ratings associated with the book entry
- * @apiSuccess {number} books.rating_count the total number of ratings the book has
- * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
- * @apiSuccess {string|null} books.image_url the image URL associated with the book if present. Null if not
- * @apiSuccess {string|null} books.image_small_url the small image URL associated with the book if present. Null if not
- * @apiSuccess {string} books.formatted the aggregate of each book as a string with format:
+ * @apiSuccess {Object[]} entries the book entry objects of all books
+ * @apiSuccess {string} entries.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} entries.authors the author(s) associated with the book entry
+ * @apiSuccess {number} entries.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} entries.original_title the original title associated with the book entry
+ * @apiSuccess {string} entries.title the title associated with the book entry
+ * @apiSuccess {number} entries.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_count the total number of ratings the book has
+ * @apiSuccess {string} entries.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} entries.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} entries.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} entries.formatted the aggregate of each book as a string with format:
  *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
@@ -227,13 +227,97 @@ bookRouter.get('/cursor', async (request: Request, response: Response) => {
     const count = result.rows[0].exact_count;
 
     response.send({
-        entries: rows.map(({ id, ...rest }) => rest).map(formatKeep), //removes demoid property
+        entries: rows.map(({ id, ...rest }) => rest).map(formatKeep), //removes id property
         pagination: {
             totalRecords: count,
             limit,
             cursor: rows
                 .map((row) => row.id) //note the lowercase, the field names for rows are all lc
-                .reduce((max, id) => (id > max ? id : max)), //gets the largest demoid
+                .reduce((max, id) => (id > max ? id : max)), //gets the largest id
+        },
+    });
+});
+
+/**
+ * @api {get} /c/books/offset Request to retrieve books by offset pagination
+ *
+ * @apiDescription Request to retrieve paginated the books using an offset
+ *
+ * @apiName Books Offset Pagination
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {number} limit the number of book objects to return. Note, if a value less than
+ * 0 is provided or a non-numeric value is provided or no value is provided, the default limit
+ * amount of 10 will be used.
+ *
+ * @apiQuery {number} offset the value used in the lookup of book objects to return. When no offset is
+ * provided, the result is the first set of paginated books. Note, if a value less than 0 is provided
+ * or a non-numeric value is provided results will be the same as not providing an offset.
+ *
+ * @apiSuccess {Object} pagination metadata results from this paginated query
+ * @apiSuccess {number} pagination.totalRecords the most recent count on the total amount of books. May be stale.
+ * @apiSuccess {number} pagination.limit the number of book objects to returned.
+ * @apiSuccess {number} pagination.offset the current offset (what was sent in the request, or the default).
+ * @apiSuccess {number} pagination.nextPage the offset to be used on the succeeding call to view the next page.
+ *
+ * @apiSuccess {Object[]} entries the book entry objects of all books
+ * @apiSuccess {string} entries.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} entries.authors the author(s) associated with the book entry
+ * @apiSuccess {number} entries.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} entries.original_title the original title associated with the book entry
+ * @apiSuccess {string} entries.title the title associated with the book entry
+ * @apiSuccess {number} entries.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_count the total number of ratings the book has
+ * @apiSuccess {string} entries.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} entries.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} entries.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} entries.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ */
+bookRouter.get('/offset', async (request: Request, response: Response) => {
+    const theQuery = `SELECT BOOKS.id, isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5,
+                        rating_count, rating_avg, image_url, image_small_url
+                    FROM BOOKS
+                    JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id
+                    JOIN RATINGS ON BOOKS.id = RATINGS.id
+                    ORDER BY BOOKS.id
+                    LIMIT $1
+                    OFFSET $2`;
+
+    // NOTE: +request.query.limit the + tells TS to treat this string as a number
+    const limit: number =
+        isNumberProvided(request.query.limit) && +request.query.limit > 0
+            ? +request.query.limit
+            : 10;
+    const offset: number =
+        isNumberProvided(request.query.offset) && +request.query.offset >= 0
+            ? +request.query.offset
+            : 0;
+
+    const theValues = [limit, offset];
+
+    const { rows } = await pool.query(theQuery, theValues);
+
+    const result = await pool.query(
+        'SELECT count(*) AS exact_count FROM BOOKS;'
+    );
+    const count = result.rows[0].exact_count;
+
+    response.send({
+        entries: rows.map(({ id, ...rest }) => rest).map(formatKeep),
+        pagination: {
+            totalRecords: count,
+            limit,
+            offset,
+            nextPage: limit + offset,
         },
     });
 });
