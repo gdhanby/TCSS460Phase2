@@ -506,6 +506,7 @@ bookRouter.get(
  * @apiError (400: Missing/Malformed Parameters) {string} message "Missing or malformed required information - please refer to documentation"
  * @apiError (400: ISBN exists) {string} message "ISBN exists"
  */
+
 bookRouter.post(
     '/',
     mwValidBookEntry,
@@ -591,7 +592,48 @@ bookRouter.post(
         }
     }
 );
-
+/**
+ * @api {patch} /c/books Request to change ratings of a book
+ *
+ * @apiDescription Request to change ratings based off of <code>isbn13</code> number.
+ *
+ * @apiName ChangeRatings
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiParam {number} isbn13 the isbn-13 to look up
+ *
+ * @apiBody {number} rating_1 the number that indicates the change in ratings for 1 star ratings.
+ * @apiBody {number} rating_2 the number that indicates the change in ratings for 2 star ratings.
+ * @apiBody {number} rating_3 the number that indicates the change in ratings for 3 star ratings.
+ * @apiBody {number} rating_4 the number that indicates the change in ratings for 4 star ratings.
+ * @apiBody {number} rating_5 the number that indicates the change in ratings for 5 star ratings.
+ *
+ * @apiSuccess (Success 200) {Object} book the book with modified ratings
+ * @apiSuccess (Success 200) {string} book.isbn13 <code>isbn13</code>
+ * @apiSuccess (Success 200) {string} book.authors <code>authors</code>
+ * @apiSuccess (Success 200) {number} book.publication_year <code>publication_year</code>
+ * @apiSuccess (Success 200) {string} book.original_title <code>original_title</code>
+ * @apiSuccess (Success 200) {string} book.title <code>title</code>
+ * @apiSuccess (Success 200) {number} book.rating_1 <code>rating_1</code>
+ * @apiSuccess (Success 200) {number} book.rating_2 <code>rating_2</code>
+ * @apiSuccess (Success 200) {number} book.rating_3 <code>rating_3</code>
+ * @apiSuccess (Success 200) {number} book.rating_4 <code>rating_4</code>
+ * @apiSuccess (Success 200) {number} book.rating_5 <code>rating_5</code>
+ * @apiSuccess (Success 200) {number} book.rating_count the total number of ratings the book has
+ * @apiSuccess (Success 200) {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess (Success 200) {string|null} book.image_url <code>image_url</code> if provided, <code>null</code> if not
+ * @apiSuccess (Success 200) {string|null} book.image_small_url <code>image_small_url</code> if provided, <code>null</code> if not
+ * @apiSuccess (Success 200) {string} book.formatted the aggregate of the book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Missing/Malformed ISBN-13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
+ * @apiError (400: Missing/Malformed ratings information) {string} message "Missing or malformed rating information. Please refer to documentation"
+ * @apiError (422: Negative ratings count from result) {string} message "Cannot perform changes - will result in a negative number of ratings"
+ */
 bookRouter.patch(
     '/:isbn13',
     mwValidISBN13,

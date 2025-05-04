@@ -30,7 +30,34 @@ const key = {
     secret: process.env.JSON_WEB_TOKEN,
 };
 // NOTE: these AuthRequests don't need to be AuthRequests(?)
-
+/**
+ * @api {patch} /changePassword Request to change a users password.
+ *
+ * @apiDescription Request to change a users password based off of current user credentials.
+ *
+ * @apiName ChangePassword
+ * @apiGroup Auth
+ *
+ * @apiUse JWT
+ *
+ * @apiBody {string} email the users email address.
+ * @apiBody {string} oldPassword the users old password.
+ * @apiBody {string} newPassword the users new password.
+ *
+ * @apiSuccess {string} accessToken JSON web token.
+ * @apiSuccess {object} user a user object.
+ * @apiSuccess {number} user.id the internal user id associated with <code>email</code>.
+ * @apiSuccess {string} email the email associated with the user.
+ * @apiSuccess {string} name the name associated with <code>email</code>.
+ * @apiSuccess {string} role the role assoicated with <code>email</code>.
+ *
+ * @apiError (404: Missing login information) {string} message "Missing required login information."
+ * @apiError (404: Missing new password information) {string} message "Missing new password information."
+ * @apiError (400: Old password and new Password match) {string} message "New password must not match old password."
+ * @apiError (400: user email does not exist) {string} message "Invalid Credentials."
+ * @apiError (400: users old Password salted hash does not match database salted hash) {string} message "Invalid user credentials."
+ *
+ */
 changePasswordRouter.patch(
     '/changePassword',
     (request: AuthRequest, response: Response, next: NextFunction) => {
@@ -114,7 +141,9 @@ changePasswordRouter.patch(
             })
             .catch((error) => {
                 console.log(error);
-                // Maybe add a message status and send portion?
+                response.status(500).send({
+                    message: 'DB error. Contact support.',
+                });
             });
     },
     (request: IUserRequest, response: Response) => {
@@ -147,7 +176,7 @@ changePasswordRouter.patch(
                 });
             } else {
                 console.log('row count more than 1 or 0.');
-                response.status(400).send({
+                response.status(500).send({
                     message: 'Error on updating account information.',
                 });
             }
