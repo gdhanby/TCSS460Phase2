@@ -47,6 +47,22 @@ function mwValidAuthorQuery(
     }
 }
 
+function mwValidTitleQuery(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    const title: string = request.query.title as string;
+    if (isStringProvided(title.trim())) {
+        next();
+    } else {
+        console.error('Invalid or missing Title');
+        response.status(400).send({
+            message: 'Invalid or missing title - please refer to documentation',
+        });
+    }
+}
+
 function mwValidRatingsEntry(
     request: Request,
     response: Response,
@@ -323,74 +339,7 @@ bookRouter.get('/offset', async (request: Request, response: Response) => {
 });
 
 /**
- * @api {get} /books/:isbn13 Request to retrieve a book entry by ISBN
- *
- * @apiDescription Request to retrieve the complete book entry for <code>isbn13</code>.
- *
- * @apiName GetBookByISBN
- * @apiGroup Books
- *
- * @apiParam {string} isbn13 the ISBN13 to look up
- *
- * @apiSuccess {Object} book the book entry object for <code>isbn13</code>
- * @apiSuccess {string} book.isbn13 <code>isbn13</code>
- * @apiSuccess {string} book.authors the author(s) associated with <code>isbn13</code>
- * @apiSuccess {number} book.publication_year the publication year associated with <code>isbn13</code>
- * @apiSuccess {string} book.original_title the original title associated with <code>isbn13</code>
- * @apiSuccess {string} book.title the title associated with <code>isbn13</code>
- * @apiSuccess {number} book.rating_1 the number of 1 star ratings associated with <code>isbn13</code>
- * @apiSuccess {number} book.rating_2 the number of 2 star ratings associated with <code>isbn13</code>
- * @apiSuccess {number} book.rating_3 the number of 3 star ratings associated with <code>isbn13</code>
- * @apiSuccess {number} book.rating_4 the number of 4 star ratings associated with <code>isbn13</code>
- * @apiSuccess {number} book.rating_5 the number of 5 star ratings associated with <code>isbn13</code>
- * @apiSuccess {number} book.rating_count the total number of ratings the book has
- * @apiSuccess {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
- * @apiSuccess {string|null} book.image_url the image URL associated with <code>isbn13</code>
- * @apiSuccess {string|null} book.image_small_url the small image URL associated with <code>isbn13</code>
- * @apiSuccess {string} book.formatted the aggregate of the book as a string with format:
- *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
- *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
- *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
- *
- * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
- * @apiError (404: ISBN13 Not Found) {string} message "ISBN not found"
- */
-bookRouter.get(
-    '/:isbn13',
-    mwValidISBN13,
-    (request: Request, response: Response) => {
-        const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
-            FROM BOOKS 
-            JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
-            JOIN RATINGS ON BOOKS.id = RATINGS.id 
-            WHERE isbn13 = $1;`;
-        const values = [request.params.isbn13];
-
-        pool.query(query, values)
-            .then((result) => {
-                if (result.rowCount == 1) {
-                    response.send({
-                        book: formatKeep(result.rows[0]),
-                    });
-                } else {
-                    response.status(404).send({
-                        message: 'ISBN not found',
-                    });
-                }
-            })
-            .catch((error) => {
-                //log the error
-                console.error('DB Query error on GET /:isbn');
-                console.error(error);
-                response.status(500).send({
-                    message: 'server error - contact support',
-                });
-            });
-    }
-);
-
-/**
- * @api {get} /c/books Request to retrieve books by author
+ * @api {get} /c/books/author Request to retrieve books by author
  *
  * @apiDescription Request to retrieve all book entries with <code>author</code>. Case-insensitive
  *
@@ -425,7 +374,7 @@ bookRouter.get(
  * @apiError (404: No Author) {String} message "No books found. Try a different author query."
  */
 bookRouter.get(
-    '/',
+    '/author',
     mwValidAuthorQuery,
     (request: Request, response: Response) => {
         const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
@@ -435,16 +384,90 @@ bookRouter.get(
             WHERE UPPER(BOOKAUTHORS.authors) LIKE UPPER('%'||$1||'%');`;
         const values = [request.query.author];
 
+        // TODO: paginate results? For the time being we are just returning the total books returned.
         pool.query(query, values)
             .then((result) => {
                 if (result.rowCount > 0) {
                     response.send({
                         books: result.rows.map(formatKeep),
+                        total: result.rowCount,
                     });
                 } else {
                     response.status(404).send({
                         message:
                             'No books found. Try a different author query.',
+                    });
+                }
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on GET /');
+                console.error(error);
+                response.status(500).send({
+                    message: 'server error - contact support',
+                });
+            });
+    }
+);
+
+/**
+ * @api {get} /c/books/title Request to retrieve books by title
+ *
+ * @apiDescription Request to retrieve all book entries with <code>title</code>. Case-insensitive
+ *
+ * @apiName GetBooksByTitle
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {string} title the title from which to retrieve all book entries containing the query
+ *
+ * @apiSuccess {Object[]} books the book entry objects of all books with <code>title</code>
+ * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} books.authors the author(s) associated with the book entry
+ * @apiSuccess {number} books.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} books.original_title the original title associated with the book entry
+ * @apiSuccess {string} books.title the title associated with the book entry
+ * @apiSuccess {number} books.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_count the total number of ratings the book has
+ * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} books.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} books.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} books.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Invalid Title) {String} message "Invalid or missing title  - please refer to documentation"
+ * @apiError (404: No Title) {String} message "No books found. Try a different title query."
+ */
+bookRouter.get(
+    '/title',
+    mwValidTitleQuery,
+    (request: Request, response: Response) => {
+        const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
+            FROM BOOKS 
+            JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
+            JOIN RATINGS ON BOOKS.id = RATINGS.id 
+            WHERE UPPER(BOOKS.title) LIKE UPPER('%'||$1||'%')
+            OR UPPER(BOOKS.original_title) LIKE UPPER('%'||$1||'%');`;
+        const values = [request.query.title];
+
+        // TODO: paginate results? For the time being we are just returning the total books returned.
+        pool.query(query, values)
+            .then((result) => {
+                if (result.rowCount > 0) {
+                    response.send({
+                        books: result.rows.map(formatKeep),
+                        total: result.rowCount,
+                    });
+                } else {
+                    response.status(404).send({
+                        message: 'No books found. Try a different title query.',
                     });
                 }
             })
@@ -592,6 +615,74 @@ bookRouter.post(
         }
     }
 );
+
+/**
+ * @api {get} /books/:isbn13 Request to retrieve a book entry by ISBN
+ *
+ * @apiDescription Request to retrieve the complete book entry for <code>isbn13</code>.
+ *
+ * @apiName GetBookByISBN
+ * @apiGroup Books
+ *
+ * @apiParam {string} isbn13 the ISBN13 to look up
+ *
+ * @apiSuccess {Object} book the book entry object for <code>isbn13</code>
+ * @apiSuccess {string} book.isbn13 <code>isbn13</code>
+ * @apiSuccess {string} book.authors the author(s) associated with <code>isbn13</code>
+ * @apiSuccess {number} book.publication_year the publication year associated with <code>isbn13</code>
+ * @apiSuccess {string} book.original_title the original title associated with <code>isbn13</code>
+ * @apiSuccess {string} book.title the title associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_1 the number of 1 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_2 the number of 2 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_3 the number of 3 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_4 the number of 4 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_5 the number of 5 star ratings associated with <code>isbn13</code>
+ * @apiSuccess {number} book.rating_count the total number of ratings the book has
+ * @apiSuccess {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} book.image_url the image URL associated with <code>isbn13</code>
+ * @apiSuccess {string|null} book.image_small_url the small image URL associated with <code>isbn13</code>
+ * @apiSuccess {string} book.formatted the aggregate of the book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
+ * @apiError (404: ISBN13 Not Found) {string} message "ISBN not found"
+ */
+bookRouter.get(
+    '/:isbn13',
+    mwValidISBN13,
+    (request: Request, response: Response) => {
+        const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
+            FROM BOOKS 
+            JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
+            JOIN RATINGS ON BOOKS.id = RATINGS.id 
+            WHERE isbn13 = $1;`;
+        const values = [request.params.isbn13];
+
+        pool.query(query, values)
+            .then((result) => {
+                if (result.rowCount == 1) {
+                    response.send({
+                        book: formatKeep(result.rows[0]),
+                    });
+                } else {
+                    response.status(404).send({
+                        message: 'ISBN not found',
+                    });
+                }
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on GET /:isbn');
+                console.error(error);
+                response.status(500).send({
+                    message: 'server error - contact support',
+                });
+            });
+    }
+);
+
 /**
  * @api {patch} /c/books/:isbn13 Request to change ratings of a book
  *
