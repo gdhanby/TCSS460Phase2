@@ -4,7 +4,9 @@ import { pool, validationFunctions } from '../../core/utilities';
 const bookRouter: Router = express.Router();
 
 const isStringProvided = validationFunctions.isStringProvided;
+const isNumberProvided = validationFunctions.isNumberProvided;
 const validISBN13 = validationFunctions.validISBN13;
+const validRatingDelta = validationFunctions.validRatingDelta;
 const validRatingOrYear = validationFunctions.validRatingOrYear;
 
 const formatKeep = (resultRow) => ({
@@ -45,6 +47,28 @@ function mwValidAuthorQuery(
     }
 }
 
+function mwValidRatingsEntry(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    if (
+        validRatingDelta(request.body.rating_1) &&
+        validRatingDelta(request.body.rating_2) &&
+        validRatingDelta(request.body.rating_3) &&
+        validRatingDelta(request.body.rating_4) &&
+        validRatingDelta(request.body.rating_5)
+    ) {
+        next();
+    } else {
+        console.error('Missing rating information!');
+        response.status(400).send({
+            message:
+                'Missing or malformed rating information. Please refer to documentation',
+        });
+    }
+}
+
 function mwValidBookEntry(
     request: Request,
     response: Response,
@@ -78,10 +102,225 @@ function mwValidBookEntry(
     }
 }
 
+// Doesn't necessarily *need* to be async, could just use Promise .then() .catch() pattern.
+// Function that makes sure rating deltas sent in won't take rating counts below 0 in the db.
+async function mwNegativeRatingPrevention(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    // Retrieve the current ratings values
+    const currentRatingsQuery = `SELECT rating_1, rating_2, rating_3, rating_4, rating_5
+                                FROM ratings WHERE id = (SELECT id
+                                                        FROM BOOKS
+                                                        WHERE isbn13 = $1);`;
+    const currentRatingsResult = await pool.query(currentRatingsQuery, [
+        request.params.isbn13,
+    ]);
+
+    const ratingsValues = [
+        request.body.rating_1 || 0,
+        request.body.rating_2 || 0,
+        request.body.rating_3 || 0,
+        request.body.rating_4 || 0,
+        request.body.rating_5 || 0,
+    ];
+
+    const currentRatings = currentRatingsResult.rows[0];
+    // Check if changes will result in a negative number of ratings
+    let idx = 0;
+    for (const key in currentRatings) {
+        if (currentRatings[key] + ratingsValues[idx] >= 0) {
+            idx++;
+            continue;
+        } else {
+            response.status(422).send({
+                message:
+                    'Cannot perform changes - will result in a negative number of ratings',
+            });
+            break;
+        }
+    }
+    if (!response.headersSent) {
+        next();
+    }
+}
+
 /**
  * @apiDefine JWT
  * @apiHeader {String} Authorization The string "Bearer " + a valid JSON Web Token (JWT).
  */
+
+/**
+ * @api {get} /c/books/cursor Request to retrieve books by cursor pagination
+ *
+ * @apiDescription Request to retrieve paginated the books using a cursor
+ *
+ * @apiName Books Cursor Pagination
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {number} limit the number of book objects to return. Note, if a value less than
+ * 0 is provided or a non-numeric value is provided or no value is provided, the default limit
+ * amount of 10 will be used.
+ *
+ * @apiQuery {number} cursor the value used in the lookup of book objects to return. When no cursor is
+ * provided, the result is the first set of paginated books. Note, if a value less than 0 is provided
+ * or a non-numeric value is provided results will be the same as not providing a cursor.
+ *
+ * @apiSuccess {Object} pagination metadata results from this paginated query
+ * @apiSuccess {number} pagination.totalRecords the most recent count on the total amount of books. May be stale.
+ * @apiSuccess {number} pagination.limit the number of book objects to returned.
+ * @apiSuccess {number} pagination.cursor the value that should be used on a preceding call to this route.
+ *
+ * @apiSuccess {Object[]} entries the book entry objects of all books
+ * @apiSuccess {string} entries.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} entries.authors the author(s) associated with the book entry
+ * @apiSuccess {number} entries.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} entries.original_title the original title associated with the book entry
+ * @apiSuccess {string} entries.title the title associated with the book entry
+ * @apiSuccess {number} entries.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_count the total number of ratings the book has
+ * @apiSuccess {string} entries.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} entries.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} entries.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} entries.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ */
+bookRouter.get('/cursor', async (request: Request, response: Response) => {
+    const theQuery = `SELECT BOOKS.id, isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5,
+                rating_count, rating_avg, image_url, image_small_url
+                FROM BOOKS
+                JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id
+                JOIN RATINGS ON BOOKS.id = RATINGS.id
+                WHERE BOOKS.id > $2
+                ORDER BY BOOKS.id
+                LIMIT $1`;
+
+    // NOTE: +request.query.limit the + tells TS to treat this string as a number
+    const limit: number =
+        isNumberProvided(request.query.limit) && +request.query.limit > 0
+            ? +request.query.limit
+            : 10;
+    const cursor: number =
+        isNumberProvided(request.query.cursor) && +request.query.cursor >= 0
+            ? +request.query.cursor
+            : 0; // autogenerated ids start at 1 so 0 is a valid starting cursor
+
+    const values = [limit, cursor];
+
+    // demonstrating deconstructing the returned object. const { rows }
+    const { rows } = await pool.query(theQuery, values);
+
+    // This query is SLOW on large datasets! - Beware!
+    const result = await pool.query(
+        'SELECT count(*) AS exact_count FROM BOOKS;'
+    );
+
+    const count = result.rows[0].exact_count;
+
+    response.send({
+        entries: rows.map(({ id, ...rest }) => rest).map(formatKeep), //removes id property
+        pagination: {
+            totalRecords: count,
+            limit,
+            cursor: rows
+                .map((row) => row.id) //note the lowercase, the field names for rows are all lc
+                .reduce((max, id) => (id > max ? id : max)), //gets the largest id
+        },
+    });
+});
+
+/**
+ * @api {get} /c/books/offset Request to retrieve books by offset pagination
+ *
+ * @apiDescription Request to retrieve paginated the books using an offset
+ *
+ * @apiName Books Offset Pagination
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {number} limit the number of book objects to return. Note, if a value less than
+ * 0 is provided or a non-numeric value is provided or no value is provided, the default limit
+ * amount of 10 will be used.
+ *
+ * @apiQuery {number} offset the value used in the lookup of book objects to return. When no offset is
+ * provided, the result is the first set of paginated books. Note, if a value less than 0 is provided
+ * or a non-numeric value is provided results will be the same as not providing an offset.
+ *
+ * @apiSuccess {Object} pagination metadata results from this paginated query
+ * @apiSuccess {number} pagination.totalRecords the most recent count on the total amount of books. May be stale.
+ * @apiSuccess {number} pagination.limit the number of book objects to returned.
+ * @apiSuccess {number} pagination.offset the current offset (what was sent in the request, or the default).
+ * @apiSuccess {number} pagination.nextPage the offset to be used on the succeeding call to view the next page.
+ *
+ * @apiSuccess {Object[]} entries the book entry objects of all books
+ * @apiSuccess {string} entries.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} entries.authors the author(s) associated with the book entry
+ * @apiSuccess {number} entries.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} entries.original_title the original title associated with the book entry
+ * @apiSuccess {string} entries.title the title associated with the book entry
+ * @apiSuccess {number} entries.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} entries.rating_count the total number of ratings the book has
+ * @apiSuccess {string} entries.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} entries.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} entries.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} entries.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ */
+bookRouter.get('/offset', async (request: Request, response: Response) => {
+    const theQuery = `SELECT BOOKS.id, isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5,
+                        rating_count, rating_avg, image_url, image_small_url
+                    FROM BOOKS
+                    JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id
+                    JOIN RATINGS ON BOOKS.id = RATINGS.id
+                    ORDER BY BOOKS.id
+                    LIMIT $1
+                    OFFSET $2`;
+
+    // NOTE: +request.query.limit the + tells TS to treat this string as a number
+    const limit: number =
+        isNumberProvided(request.query.limit) && +request.query.limit > 0
+            ? +request.query.limit
+            : 10;
+    const offset: number =
+        isNumberProvided(request.query.offset) && +request.query.offset >= 0
+            ? +request.query.offset
+            : 0;
+
+    const theValues = [limit, offset];
+
+    const { rows } = await pool.query(theQuery, theValues);
+
+    const result = await pool.query(
+        'SELECT count(*) AS exact_count FROM BOOKS;'
+    );
+    const count = result.rows[0].exact_count;
+
+    response.send({
+        entries: rows.map(({ id, ...rest }) => rest).map(formatKeep),
+        pagination: {
+            totalRecords: count,
+            limit,
+            offset,
+            nextPage: limit + offset,
+        },
+    });
+});
 
 /**
  * @api {get} /books/:isbn13 Request to retrieve a book entry by ISBN
@@ -267,6 +506,7 @@ bookRouter.get(
  * @apiError (400: Missing/Malformed Parameters) {string} message "Missing or malformed required information - please refer to documentation"
  * @apiError (400: ISBN exists) {string} message "ISBN exists"
  */
+
 bookRouter.post(
     '/',
     mwValidBookEntry,
@@ -349,6 +589,109 @@ bookRouter.post(
             }
         } finally {
             client.release();
+        }
+    }
+);
+/**
+ * @api {patch} /c/books/:isbn13 Request to change ratings of a book
+ *
+ * @apiDescription Request to change ratings based of a book with <code>isbn13</code>.
+ *
+ * @apiName ChangeRatings
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiParam {number} isbn13 the isbn13 of the book to update
+ *
+ * @apiBody {number} [rating_1] the number that indicates the change in ratings for 1 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_2] the number that indicates the change in ratings for 2 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_3] the number that indicates the change in ratings for 3 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_4] the number that indicates the change in ratings for 4 star ratings. Only provide if changing the corresponding rating count.
+ * @apiBody {number} [rating_5] the number that indicates the change in ratings for 5 star ratings. Only provide if changing the corresponding rating count.
+ *
+ * @apiSuccess (Success 200) {Object} book the book with modified ratings
+ * @apiSuccess (Success 200) {string} book.isbn13 <code>isbn13</code>
+ * @apiSuccess (Success 200) {string} book.authors <code>authors</code>
+ * @apiSuccess (Success 200) {number} book.publication_year <code>publication_year</code>
+ * @apiSuccess (Success 200) {string} book.original_title <code>original_title</code>
+ * @apiSuccess (Success 200) {string} book.title <code>title</code>
+ * @apiSuccess (Success 200) {number} book.rating_1 <code>rating_1</code>
+ * @apiSuccess (Success 200) {number} book.rating_2 <code>rating_2</code>
+ * @apiSuccess (Success 200) {number} book.rating_3 <code>rating_3</code>
+ * @apiSuccess (Success 200) {number} book.rating_4 <code>rating_4</code>
+ * @apiSuccess (Success 200) {number} book.rating_5 <code>rating_5</code>
+ * @apiSuccess (Success 200) {number} book.rating_count the total number of ratings the book has
+ * @apiSuccess (Success 200) {string} book.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess (Success 200) {string|null} book.image_url <code>image_url</code> if provided, <code>null</code> if not
+ * @apiSuccess (Success 200) {string|null} book.image_small_url <code>image_small_url</code> if provided, <code>null</code> if not
+ * @apiSuccess (Success 200) {string} book.formatted the aggregate of the book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (400: Missing/Malformed ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
+ * @apiError (400: Missing/Malformed ratings information) {string} message "Missing or malformed rating information. Please refer to documentation"
+ * @apiError (404: No book with ISBN13) {string} message "No book found to update. Try a different ISBN13"
+ * @apiError (422: Negative ratings count from result) {string} message "Cannot perform changes - will result in a negative number of ratings"
+ */
+bookRouter.patch(
+    '/:isbn13',
+    mwValidISBN13,
+    mwValidRatingsEntry,
+    mwNegativeRatingPrevention,
+    async (request: Request, response: Response) => {
+        /* Route for updating rating counts of book. user provides isbn13 as route parameter, 
+        and request body has which counts they want to update (rating_1, rating_2, etc.). They
+        should be able to provide only the ones they want to update, and the value in the DB will
+        be overwritten. */
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const ratingQuery = `UPDATE ratings SET rating_1 = rating_1 + $1, rating_2 = rating_2 + $2, rating_3 = rating_3 + $3, rating_4 = rating_4 + $4, rating_5 = rating_5 + $5 
+                                WHERE id = (SELECT id 
+                                            FROM BOOKS
+                                            WHERE isbn13 = $6);`;
+            const ratingsValues = [
+                request.body.rating_1 || 0,
+                request.body.rating_2 || 0,
+                request.body.rating_3 || 0,
+                request.body.rating_4 || 0,
+                request.body.rating_5 || 0,
+                request.params.isbn13,
+            ];
+
+            await client.query(ratingQuery, ratingsValues);
+
+            const infoSelect = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5,
+                rating_count, rating_avg, image_url, image_small_url
+                FROM BOOKS
+                JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id
+                JOIN RATINGS ON BOOKS.id = RATINGS.id
+                WHERE isbn13 = $1`;
+            const result = await client.query(infoSelect, [
+                request.params.isbn13,
+            ]);
+            response.status(200).send({
+                book: formatKeep(result.rows[0]),
+            });
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('server error on patch whoops');
+            console.error(error);
+            if (
+                error.message != undefined &&
+                (error.message as string).endsWith("(reading 'isbn13')")
+            ) {
+                response.status(404).send({
+                    message: 'No book found to update. Try a different ISBN13',
+                });
+            } else {
+                response.status(500).send({
+                    message: 'server error - contact support',
+                });
+            }
         }
     }
 );

@@ -73,11 +73,21 @@ function validRatingOrYear(rating: number) {
 // for example: isNumericProvided, isValidPassword, isValidEmail, etc
 // don't forget to export any
 
+/**
+ * Validates rating count changes. Ignores if undefined.
+ * @param rating data to validate
+ * @returns true if rating is undefined, or if it is
+ */
+function validRatingDelta(rating: number) {
+    return rating == null || isNumberProvided(rating);
+}
+
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
     validISBN13,
     validRatingOrYear,
+    validRatingDelta,
 };
 
 export { validationFunctions };
