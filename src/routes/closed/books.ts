@@ -370,6 +370,8 @@ bookRouter.get('/offset', async (request: Request, response: Response) => {
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
+ * @apiSuccess {number} total the total number of books returned
+ *
  * @apiError (400: Invalid Author) {String} message "Invalid or missing author  - please refer to documentation"
  * @apiError (404: No Author) {String} message "No books found. Try a different author query."
  */
@@ -442,6 +444,8 @@ bookRouter.get(
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
+ * @apiSuccess {number} total the total number of books returned
+ *
  * @apiError (400: Invalid Title) {String} message "Invalid or missing title  - please refer to documentation"
  * @apiError (404: No Title) {String} message "No books found. Try a different title query."
  */
@@ -482,6 +486,43 @@ bookRouter.get(
     }
 );
 
+/**
+ * @api {get} /c/books/rating Request to retrieve books by total rating count and/or rating average
+ *
+ * @apiDescription Request to retrieve all book entries with total rating counts and averages in user-specified ranges (inclusive at both ends)
+ *
+ * @apiName GetBooksByTitle
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {number} [ratingCountBegin] the beginning of the rating count range. Defaults to 0 if invalid or not provided
+ * @apiQuery {number} [ratingCountEnd] the end of the rating count range. Defaults to the maximum integer value if invalid or not provided
+ * @apiQuery {number} [ratingAvgBegin] the beginning of the rating average range. Defaults to 0.00 if invalid or not provided
+ * @apiQuery {number} [ratingAvgEnd] the end of the rating average range. Defaults to 5.00 if invalid or not provided
+ *
+ * @apiSuccess {Object[]} books the book entry objects of all books that satisfy the rating criteria
+ * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} books.authors the author(s) associated with the book entry
+ * @apiSuccess {number} books.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} books.original_title the original title associated with the book entry
+ * @apiSuccess {string} books.title the title associated with the book entry
+ * @apiSuccess {number} books.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_count the total number of ratings the book has
+ * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} books.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} books.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} books.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiError (404: No Books) {string} message "No books found. Try a different query."
+ */
 bookRouter.get('/rating', async (request: Request, response: Response) => {
     const ratingCountBegin: number =
         isNumberProvided(request.query.ratingCountBegin) &&
