@@ -482,6 +482,64 @@ bookRouter.get(
     }
 );
 
+bookRouter.get('/rating', async (request: Request, response: Response) => {
+    const ratingCountBegin: number =
+        isNumberProvided(request.query.ratingCountBegin) &&
+        +request.query.ratingCountBegin > 0
+            ? +request.query.ratingCountBegin
+            : 0;
+    const ratingCountEnd: number =
+        isNumberProvided(request.query.ratingCountEnd) &&
+        +request.query.ratingCountEnd > 0
+            ? +request.query.ratingCountEnd
+            : 2147483647; // max integer value postgres
+    const ratingAvgBegin: number =
+        isNumberProvided(request.query.ratingAvgBegin) &&
+        +request.query.ratingAvgBegin > 0
+            ? +request.query.ratingAvgBegin
+            : 0;
+    const ratingAvgEnd: number =
+        isNumberProvided(request.query.ratingAvgEnd) &&
+        +request.query.ratingAvgEnd > 0
+            ? +request.query.ratingAvgEnd
+            : 5.0;
+
+    const ratingRanges = [
+        ratingCountBegin,
+        ratingCountEnd,
+        ratingAvgBegin,
+        ratingAvgEnd,
+    ];
+    const theQuery = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
+            FROM BOOKS 
+            JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
+            JOIN RATINGS ON BOOKS.id = RATINGS.id 
+            WHERE rating_count >= $1 AND rating_count <= $2
+            AND rating_avg >= $3 AND rating_avg <= $4;`;
+
+    pool.query(theQuery, ratingRanges)
+        .then((result) => {
+            if (result.rowCount > 0) {
+                response.send({
+                    books: result.rows.map(formatKeep),
+                    total: result.rowCount,
+                });
+            } else {
+                response.status(404).send({
+                    message: 'No books found. Try a different query.',
+                });
+            }
+        })
+        .catch((error) => {
+            //log the error
+            console.error('DB Query error on GET /');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        });
+});
+
 /**
  * @api {post} /c/books Request to add a book entry
  *
