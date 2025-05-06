@@ -491,7 +491,7 @@ bookRouter.get(
  *
  * @apiDescription Request to retrieve all book entries with total rating counts and averages in user-specified ranges (inclusive at both ends)
  *
- * @apiName GetBooksByTitle
+ * @apiName getBooksByRating
  * @apiGroup Books
  *
  * @apiUse JWT
