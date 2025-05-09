@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
+import { isUndefined } from 'util';
 
 const bookRouter: Router = express.Router();
 
@@ -115,6 +116,43 @@ function mwValidBookEntry(
             message:
                 'Missing or malformed required information - please refer to documentation',
         });
+    }
+}
+
+function mwValidYearsEntry(
+    request: Request,
+    response: Response,
+    next: NextFunction
+) {
+    if (
+        Number(request.query.beginningYear) > Number(request.query.endingYear)
+    ) {
+        console.log('Ending Year is greater than the beginning year');
+        response.status(400).send({
+            message: 'Ending year value is less than the beginning year value',
+        });
+    } else if (
+        request.query.beginningYear === '' &&
+        request.query.endingYear === ''
+    ) {
+        console.log('both year values are undefined');
+        response.status(404).send({
+            message:
+                'Year values are not defined - please enter a valid year parameter',
+        });
+    } else if (
+        isNaN(Number(request.query.beginningYear)) ||
+        isNaN(Number(request.query.endingYear))
+    ) {
+        console.log('query parameters are NaN');
+        response.status(400).send({
+            message: 'Year values are not a valid number',
+        });
+    } else if (
+        validRatingOrYear(Number(request.query.beginningYear)) ||
+        validRatingOrYear(Number(request.query.endingYear))
+    ) {
+        next();
     }
 }
 
@@ -485,7 +523,82 @@ bookRouter.get(
             });
     }
 );
-
+/**
+ * @api {get} /c/books/year Request to retrieve books by year range
+ *
+ * @apiDescription Request to retrieve all books based off of a <code>Beginning year</code> and an <code>Ending year</code>
+ *
+ * @apiName GetBooksbyYearRange
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiQuery {string} [beginningYear] The string that indicates the lower range of looking up books in a year range
+ * @apiQuery {string} [endingYear] The string that indicates the upper range of looking up books in a year range
+ *
+ * @apiSuccess {Object[]} books the book entry objects of all books that satisfy the rating criteria
+ * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
+ * @apiSuccess {string} books.authors the author(s) associated with the book entry
+ * @apiSuccess {number} books.publication_year the publication year associated with the book entry
+ * @apiSuccess {string} books.original_title the original title associated with the book entry
+ * @apiSuccess {string} books.title the title associated with the book entry
+ * @apiSuccess {number} books.rating_1 the number of 1 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_2 the number of 2 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_3 the number of 3 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_4 the number of 4 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_5 the number of 5 star ratings associated with the book entry
+ * @apiSuccess {number} books.rating_count the total number of ratings the book has
+ * @apiSuccess {string} books.rating_avg the average rating of the book as a numeric string rounded to two decimal places
+ * @apiSuccess {string|null} books.image_url the image URL associated with the book if present. Null if not
+ * @apiSuccess {string|null} books.image_small_url the small image URL associated with the book if present. Null if not
+ * @apiSuccess {string} books.formatted the aggregate of each book as a string with format:
+ *      "<code>isbn13</code>, <code>authors</code>, <code>publication_year</code>, <code>original_title</code>,
+ *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
+ *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
+ *
+ * @apiSuccess {number} total the total number of books returned
+ *
+ * @apiError (400 Ending Year Value is less than Beginning Year Value) message "Ending year value is less than the beginning year value"
+ * @apiError (404 Both Year Values are Undefined) message "Year values are not defined - please enter a valid year parameter"
+ * @apiError (400 Year Values are NaN) message "Year values are not a valid number"
+ * @apiError (404 No book entries found) message "No entries found"
+ *
+ */
+bookRouter.get(
+    '/year',
+    mwValidYearsEntry,
+    (request: Request, response: Response) => {
+        const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
+            FROM BOOKS 
+            JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
+            JOIN RATINGS ON BOOKS.id = RATINGS.id 
+        WHERE publication_year >= $1 AND publication_year <= $2`;
+        const values = [
+            request.query.beginningYear || 0,
+            request.query.endingYear || 5000,
+        ];
+        pool.query(query, values)
+            .then((result) => {
+                if (result.rowCount > 0) {
+                    response.status(200).send({
+                        books: result.rows.map(formatKeep),
+                        total: result.rowCount,
+                    });
+                } else {
+                    response.status(404).send({
+                        message: 'No entries found',
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('DB error on GET/');
+                console.error(error);
+                response.status(500).send({
+                    message: 'Server error - contact support',
+                });
+            });
+    }
+);
 /**
  * @api {get} /c/books/rating Request to retrieve books by total rating count and/or rating average
  *
