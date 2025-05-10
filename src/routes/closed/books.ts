@@ -829,6 +829,69 @@ bookRouter.post(
 );
 
 /**
+ * @api {delete} /c/books/:isbn13 Request to remove a book entry by ISBN
+ *
+ * @apiDescription Request to remove an entry associated with <code>isbn13</code> in the DB
+ *
+ * @apiName DeleteBookByISBN
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiParam {number} isbn13 the ISBN associated with the entry to delete
+ *
+ * @apiSuccess {string} message the string: "Book successfully deleted"
+ *
+ * @apiError (404: ISBN Not Found) {string} message "ISBN not found"
+ */
+bookRouter.delete(
+    '/:isbn13',
+    mwValidISBN13,
+    async (request: Request, response: Response) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const checkBookQuery = 'SELECT id FROM BOOKS WHERE isbn13 = $1';
+            const theISBN = [request.params.isbn13];
+            const checkBookResult = await client.query(checkBookQuery, theISBN);
+
+            if (checkBookResult.rowCount !== 1) {
+                await client.query('ROLLBACK');
+                response.status(404).send({
+                    message: 'ISBN not found',
+                });
+            }
+
+            const theBookID = [checkBookResult.rows[0].id];
+
+            const deleteAuthorsQuery = 'DELETE FROM BOOKAUTHORS WHERE id = $1';
+            await client.query(deleteAuthorsQuery, theBookID);
+
+            const deleteRatingsQuery = 'DELETE FROM RATINGS WHERE id = $1';
+            await client.query(deleteRatingsQuery, theBookID);
+
+            const deleteBookQuery = 'DELETE FROM BOOKS WHERE id = $1';
+            await client.query(deleteBookQuery, theBookID);
+
+            await client.query('COMMIT');
+            response.send({
+                message: 'Book successfully deleted',
+            });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('server error on delete, uh oh');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        } finally {
+            client.release();
+        }
+    }
+);
+
+/**
  * @api {get} /books/:isbn13 Request to retrieve a book entry by ISBN
  *
  * @apiDescription Request to retrieve the complete book entry for <code>isbn13</code>.
