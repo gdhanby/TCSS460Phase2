@@ -1,6 +1,5 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
-import { isUndefined } from 'util';
 
 const bookRouter: Router = express.Router();
 
@@ -21,7 +20,11 @@ function mwValidISBN13(
     next: NextFunction
 ) {
     const isbnString: string = request.params.isbn13;
-    if (isbnString.length == 13 && /^\d+$/.test(isbnString)) {
+    if (isNaN(Number(isbnString))) {
+        response.status(400).send({
+            message: 'Malformed ISBN-13 - please resubmit ISBN-13',
+        });
+    } else if (isbnString.length == 13 && /^\d+$/.test(isbnString)) {
         next();
     } else {
         response.status(400).send({
