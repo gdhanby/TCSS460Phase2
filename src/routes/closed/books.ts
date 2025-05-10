@@ -561,10 +561,10 @@ bookRouter.get(
  *
  * @apiSuccess {number} total the total number of books returned
  *
- * @apiError (400 Ending Year Value is less than Beginning Year Value) message "Ending year value is less than the beginning year value"
- * @apiError (404 Both Year Values are Undefined) message "Year values are not defined - please enter a valid year parameter"
- * @apiError (400 Year Values are NaN) message "Year values are not a valid number"
- * @apiError (404 No book entries found) message "No entries found"
+ * @apiError (400 Ending Year Value is less than Beginning Year Value) {string} message "Ending year value is less than the beginning year value"
+ * @apiError (404 Both Year Values are Undefined) {string} message "Year values are not defined - please enter a valid year parameter"
+ * @apiError (400 Year Values are NaN) {string} message "Year values are not a valid number"
+ * @apiError (404 No book entries found) {string} message "No entries found"
  *
  */
 bookRouter.get(
@@ -845,6 +845,7 @@ bookRouter.post(
  *
  * @apiSuccess {string} message the string: "Book successfully deleted"
  *
+ * @apiError (400: ISBN Malformed) {string} message "Malformed ISBN-13 - please resubmit ISBN-13"
  * @apiError (404: ISBN Not Found) {string} message "ISBN not found"
  */
 bookRouter.delete(
@@ -924,6 +925,7 @@ bookRouter.delete(
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
+ * @apiError (400: Malformed ISBN13) {string} message "Malformed ISBN-13 - please resubmit ISBN-13"
  * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (404: ISBN13 Not Found) {string} message "ISBN not found"
  */
@@ -999,7 +1001,8 @@ bookRouter.get(
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
- * @apiError (400: Missing/Malformed ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
+ * @apiError (400: Malformed ISBN13) {string} message "Malformed ISBN-13 - please resubmit ISBN-13"
+ * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (400: Missing/Malformed ratings information) {string} message "Missing or malformed rating information. Please refer to documentation"
  * @apiError (404: No book with ISBN13) {string} message "No book found to update. Try a different ISBN13"
  * @apiError (422: Negative ratings count from result) {string} message "Cannot perform changes - will result in a negative number of ratings"
