@@ -128,7 +128,10 @@ function mwValidYearsQuery(
     next: NextFunction
 ) {
     if (
-        Number(request.query.beginningYear) > Number(request.query.endingYear)
+        Number(request.query.beginningYear) >
+            Number(request.query.endingYear) &&
+        request.query.beginningYear !== '' &&
+        request.query.endingYear !== ''
     ) {
         console.log('Ending Year is greater than the beginning year');
         response.status(400).send({
@@ -576,7 +579,10 @@ bookRouter.get(
             JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
             JOIN RATINGS ON BOOKS.id = RATINGS.id 
         WHERE publication_year >= $1 AND publication_year <= $2`;
-        const values = [request.query.beginningYear, request.query.endingYear];
+        const values = [
+            request.query.beginningYear || 0,
+            request.query.endingYear || 5000,
+        ];
         pool.query(query, values)
             .then((result) => {
                 if (result.rowCount > 0) {
