@@ -832,6 +832,74 @@ bookRouter.post(
 );
 
 /**
+ * @api {delete} /c/books/:title Request to remove a book entry by title
+ *
+ * @apiDescription Request to remove an entry associated with <code>title</code> in the DB
+ *
+ * @apiName DeleteBookByTitle
+ * @apiGroup Books
+ *
+ * @apiUse JWT
+ *
+ * @apiParam {string} title the Title associated with the entry to delete
+ *
+ * @apiSuccess {string} message the string: "Book successfully deleted"
+ *
+ * @apiError (400: Title Malformed) {string} message "Malformed Title - please resubmit Title"
+ * @apiError (404: Title Not Found) {string} message "Title not found"
+ */
+bookRouter.delete(
+    '/title',
+    mwValidTitleQuery,
+    async (request: Request, response: Response) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const checkBookQuery = 'SELECT id FROM BOOKS WHERE title = $1';
+            const theTitle = [request.query.title];
+            const checkBookResult = await client.query(
+                checkBookQuery,
+                theTitle
+            );
+
+            if (checkBookResult.rowCount !== 1) {
+                await client.query('ROLLBACK');
+                response.status(404).send({
+                    message: 'Title not found or not unique',
+                });
+            } else {
+                const theBookID = [checkBookResult.rows[0].id];
+
+                const deleteAuthorsQuery =
+                    'DELETE FROM BOOKAUTHORS WHERE id = $1';
+                await client.query(deleteAuthorsQuery, theBookID);
+
+                const deleteRatingsQuery = 'DELETE FROM RATINGS WHERE id = $1';
+                await client.query(deleteRatingsQuery, theBookID);
+
+                const deleteBookQuery = 'DELETE FROM BOOKS WHERE id = $1';
+                await client.query(deleteBookQuery, theBookID);
+
+                await client.query('COMMIT');
+                response.send({
+                    message: 'Book successfully deleted',
+                });
+            }
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Server error on delete');
+            console.error(error);
+            response.status(500).send({
+                message: 'Server error - contact support',
+            });
+        } finally {
+            client.release();
+        }
+    }
+);
+
+/**
  * @api {delete} /c/books/:isbn13 Request to remove a book entry by ISBN
  *
  * @apiDescription Request to remove an entry associated with <code>isbn13</code> in the DB
@@ -865,23 +933,24 @@ bookRouter.delete(
                 response.status(404).send({
                     message: 'ISBN not found',
                 });
+            } else {
+                const theBookID = [checkBookResult.rows[0].id];
+
+                const deleteAuthorsQuery =
+                    'DELETE FROM BOOKAUTHORS WHERE id = $1';
+                await client.query(deleteAuthorsQuery, theBookID);
+
+                const deleteRatingsQuery = 'DELETE FROM RATINGS WHERE id = $1';
+                await client.query(deleteRatingsQuery, theBookID);
+
+                const deleteBookQuery = 'DELETE FROM BOOKS WHERE id = $1';
+                await client.query(deleteBookQuery, theBookID);
+
+                await client.query('COMMIT');
+                response.send({
+                    message: 'Book successfully deleted',
+                });
             }
-
-            const theBookID = [checkBookResult.rows[0].id];
-
-            const deleteAuthorsQuery = 'DELETE FROM BOOKAUTHORS WHERE id = $1';
-            await client.query(deleteAuthorsQuery, theBookID);
-
-            const deleteRatingsQuery = 'DELETE FROM RATINGS WHERE id = $1';
-            await client.query(deleteRatingsQuery, theBookID);
-
-            const deleteBookQuery = 'DELETE FROM BOOKS WHERE id = $1';
-            await client.query(deleteBookQuery, theBookID);
-
-            await client.query('COMMIT');
-            response.send({
-                message: 'Book successfully deleted',
-            });
         } catch (error) {
             await client.query('ROLLBACK');
             console.error('server error on delete, uh oh');
@@ -893,71 +962,6 @@ bookRouter.delete(
             client.release();
         }
     }
-);
-
-/**
- * @api {delete} /c/books/:title Request to remove a book entry by title
- *
- * @apiDescription Request to remove an entry associated with <code>title</code> in the DB
- *
- * @apiName DeleteBookByTitle
- * @apiGroup Books
- *
- * @apiUse JWT
- *
- * @apiParam {string} title the Title associated with the entry to delete
- *
- * @apiSuccess {string} message the string: "Book successfully deleted"
- *
- * @apiError (400: Title Malformed) {string} message "Malformed Title - please resubmit Title"
- * @apiError (404: Title Not Found) {string} message "Title not found"
- */
-bookRouter.delete(
-    '/title',
-    mwValidTitleQuery,
-    async (request: Request, response: Response) => {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-
-            const checkBookQuery = 'SELECT id FROM BOOKS WHERE title = $1';
-            const theTitle = [request.params.title];
-            const checkBookResult = await client.query(checkBookQuery, theTitle);
-
-            if (checkBookResult.rowCount !== 1) {
-                await client.query('ROLLBACK');
-                response.status(404).send({
-                    message: 'Title not found or not unique',
-                });
-            }
-
-            const theBookID = [checkBookResult.rows[0].id];
-
-            const deleteAuthorsQuery = 'DELETE FROM BOOKAUTHORS WHERE id = $1';
-            await client.query(deleteAuthorsQuery, theBookID);
-
-            const deleteRatingsQuery = 'DELETE FROM RATINGS WHERE id = $1';
-            await client.query(deleteRatingsQuery, theBookID);
-
-            const deleteBookQuery = 'DELETE FROM BOOKS WHERE id = $1';
-            await client.query(deleteBookQuery, theBookID);
-
-            await client.query('COMMIT');
-            response.send({
-                message: 'Book successfully deleted',
-            });
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error('Server error on delete');
-            console.error(error);
-            response.status(500).send({
-                message: 'Server error - contact support',
-            });
-        } finally {
-            client.release();
-        }
-    }
-
 );
 
 /**
