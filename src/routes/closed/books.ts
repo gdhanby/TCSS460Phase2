@@ -122,7 +122,7 @@ function mwValidBookEntry(
     }
 }
 
-function mwValidYearsEntry(
+function mwValidYearsQuery(
     request: Request,
     response: Response,
     next: NextFunction
@@ -149,7 +149,7 @@ function mwValidYearsEntry(
     ) {
         console.log('query parameters are NaN');
         response.status(400).send({
-            message: 'Year values are not a valid number',
+            message: 'Year value(s) are not a valid number',
         });
     } else if (
         validRatingOrYear(Number(request.query.beginningYear)) ||
@@ -569,17 +569,14 @@ bookRouter.get(
  */
 bookRouter.get(
     '/year',
-    mwValidYearsEntry,
+    mwValidYearsQuery,
     (request: Request, response: Response) => {
         const query = `SELECT isbn13, authors, publication_year, original_title, title, rating_1, rating_2, rating_3, rating_4, rating_5, rating_count, rating_avg, image_url, image_small_url 
             FROM BOOKS 
             JOIN BOOKAUTHORS ON BOOKS.id = BOOKAUTHORS.id 
             JOIN RATINGS ON BOOKS.id = RATINGS.id 
         WHERE publication_year >= $1 AND publication_year <= $2`;
-        const values = [
-            request.query.beginningYear || 0,
-            request.query.endingYear || 5000,
-        ];
+        const values = [request.query.beginningYear, request.query.endingYear];
         pool.query(query, values)
             .then((result) => {
                 if (result.rowCount > 0) {
