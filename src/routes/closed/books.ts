@@ -583,7 +583,6 @@ bookRouter.get(
             request.query.beginningYear || 0,
             request.query.endingYear || 5000,
         ];
-        console.log(values);
         pool.query(query, values)
             .then((result) => {
                 if (result.rowCount > 0) {
