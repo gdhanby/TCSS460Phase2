@@ -835,9 +835,9 @@ bookRouter.post(
 );
 
 /**
- * @api {delete} /c/books/title/ Request to remove a book entry by title. Only one book may be deleted by title at a time.
+ * @api {delete} /c/books/title/ Request to remove a book entry by title
  *
- * @apiDescription Request to remove an entry associated with <code>title</code> in the DB
+ * @apiDescription Request to remove an entry associated with <code>title</code> in the DB. Only one book may be deleted by title at a time.
  *
  * @apiName DeleteBookByTitle
  * @apiGroup Books
