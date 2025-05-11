@@ -128,7 +128,10 @@ function mwValidYearsEntry(
     next: NextFunction
 ) {
     if (
-        Number(request.query.beginningYear) > Number(request.query.endingYear)
+        Number(request.query.beginningYear) >
+            Number(request.query.endingYear) &&
+        request.query.beginningYear !== '' &&
+        request.query.endingYear !== ''
     ) {
         console.log('Ending Year is greater than the beginning year');
         response.status(400).send({
@@ -580,6 +583,7 @@ bookRouter.get(
             request.query.beginningYear || 0,
             request.query.endingYear || 5000,
         ];
+        console.log(values);
         pool.query(query, values)
             .then((result) => {
                 if (result.rowCount > 0) {
