@@ -829,7 +829,7 @@ bookRouter.post(
 );
 
 /**
- * @api {delete} /c/books/:title Request to remove a book entry by title
+ * @api {delete} /c/books/title/ Request to remove a book entry by title. Only one book may be deleted by title at a time.
  *
  * @apiDescription Request to remove an entry associated with <code>title</code> in the DB
  *
@@ -838,12 +838,12 @@ bookRouter.post(
  *
  * @apiUse JWT
  *
- * @apiParam {string} title the Title associated with the entry to delete
+ * @apiQuery {string} title the title associated with the entry to delete
  *
  * @apiSuccess {string} message the string: "Book successfully deleted"
  *
  * @apiError (400: Title Malformed) {string} message "Malformed Title - please resubmit Title"
- * @apiError (404: Title Not Found) {string} message "Title not found"
+ * @apiError (400: Title Not Found) {string} message "Title not found or not unique"
  */
 bookRouter.delete(
     '/title',
@@ -853,7 +853,7 @@ bookRouter.delete(
         try {
             await client.query('BEGIN');
 
-            const checkBookQuery = 'SELECT id FROM BOOKS WHERE title = $1';
+            const checkBookQuery = `SELECT id FROM BOOKS WHERE UPPER(title) LIKE UPPER('%'||$1||'%');`;
             const theTitle = [request.query.title];
             const checkBookResult = await client.query(
                 checkBookQuery,
@@ -862,7 +862,7 @@ bookRouter.delete(
 
             if (checkBookResult.rowCount !== 1) {
                 await client.query('ROLLBACK');
-                response.status(404).send({
+                response.status(400).send({
                     message: 'Title not found or not unique',
                 });
             } else {
@@ -910,7 +910,7 @@ bookRouter.delete(
  *
  * @apiSuccess {string} message the string: "Book successfully deleted"
  *
- * @apiError (400: ISBN Malformed) {string} message "Malformed ISBN-13 - please resubmit ISBN-13"
+ * @apiError (400: ISBN Malformed) {string} message "Malformed ISBN13 - please resubmit ISBN113"
  * @apiError (404: ISBN Not Found) {string} message "ISBN not found"
  */
 bookRouter.delete(
