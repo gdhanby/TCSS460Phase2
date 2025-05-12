@@ -20,11 +20,7 @@ function mwValidISBN13(
     next: NextFunction
 ) {
     const isbnString: string = request.params.isbn13;
-    if (isNaN(Number(isbnString))) {
-        response.status(400).send({
-            message: 'Malformed ISBN-13 - please resubmit ISBN-13',
-        });
-    } else if (isbnString.length == 13 && /^\d+$/.test(isbnString)) {
+    if (isbnString.length == 13 && /^\d+$/.test(isbnString)) {
         next();
     } else {
         response.status(400).send({
