@@ -845,7 +845,7 @@ bookRouter.post(
  * @apiSuccess {string} message the string: "Book successfully deleted"
  *
  * @apiError (400: Title Malformed) {string} message "Malformed Title - please resubmit Title"
- * @apiError (400: Title Not Found) {string} message "Title not found or not unique"
+ * @apiError (400: Title Not Found or Not Unique) {string} message "Title not found or not unique"
  */
 bookRouter.delete(
     '/title',
