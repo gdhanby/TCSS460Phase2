@@ -912,7 +912,7 @@ bookRouter.delete(
  *
  * @apiSuccess {string} message the string: "Book successfully deleted"
  *
- * @apiError (400: ISBN Malformed) {string} message "Malformed ISBN13 - please resubmit ISBN113"
+ * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (404: ISBN Not Found) {string} message "ISBN not found"
  */
 bookRouter.delete(
@@ -993,7 +993,6 @@ bookRouter.delete(
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
- * @apiError (400: Malformed ISBN13) {string} message "Malformed ISBN-13 - please resubmit ISBN-13"
  * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (404: ISBN13 Not Found) {string} message "ISBN not found"
  */
@@ -1069,7 +1068,6 @@ bookRouter.get(
  *       <code>title</code>, <code>rating_1</code>, <code>rating_2</code>, <code>rating_3</code>, <code>rating_4</code>, <code>rating_5</code>,
  *       <code>rating_count</code>, <code>rating_avg</code>, <code>image_url</code>, <code>image_small_url</code>"
  *
- * @apiError (400: Malformed ISBN13) {string} message "Malformed ISBN-13 - please resubmit ISBN-13"
  * @apiError (400: Invalid/missing ISBN13) {string} message "Invalid or missing ISBN13 - please refer to documentation"
  * @apiError (400: Missing/Malformed ratings information) {string} message "Missing or malformed rating information. Please refer to documentation"
  * @apiError (404: No book with ISBN13) {string} message "No book found to update. Try a different ISBN13"
