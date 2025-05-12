@@ -1,35 +1,15 @@
 {
 	"info": {
-		"_postman_id": "5a9d8f5e-3b7c-4b94-8599-092ba1921184",
-		"name": "Group1 Beta II Tests",
+		"_postman_id": "769e3f81-e44f-49a2-87aa-f03dc27a7c33",
+		"name": "Group1 Beta Tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "43598426",
-		"_collection_link": "https://noahdangerfield.postman.co/workspace/Noah-Dangerfield's-Workspace~cbacfb65-b879-4f15-8693-60f9be53bdaa/collection/43598426-5a9d8f5e-3b7c-4b94-8599-092ba1921184?action=share&source=collection_link&creator=43598426"
+		"_exporter_id": "43962574",
+		"_collection_link": "https://gagehanby.postman.co/workspace/Messages~769c7bcf-79b4-46fc-99da-a390cf59ab6e/collection/43962574-769e3f81-e44f-49a2-87aa-f03dc27a7c33?action=share&source=collection_link&creator=43962574"
 	},
 	"item": [
 		{
 			"name": "Create test user",
 			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"const firstname = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
-							"const lastname = pm.variables.replaceIn(\"{{$randomLastName}}\");\r",
-							"const email = pm.variables.replaceIn(\"{{$randomEmail}}\");\r",
-							"const password = \"changes1\"\r",
-							"const username = pm.variables.replaceIn(\"{{$randomAdjective}}\");\r",
-							"const role = 1;\r",
-							"const phone = pm.variables.replaceIn(\"{{$randomPhoneNumber}}\");\r",
-							"\r",
-							"pm.collectionVariables.set(\"oldPassword\", \"changes1\");\r",
-							"pm.collectionVariables.set(\"email\", email);\r",
-							"pm.collectionVariables.set(\"newUserBody\", JSON.stringify({firstname, lastname, email, password, username, role, phone}));"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
 				{
 					"listen": "test",
 					"script": {
@@ -38,6 +18,24 @@
 							"\r",
 							"const jwt = pm.response.json().accessToken;\r",
 							"pm.collectionVariables.set('jwt', jwt);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const firstname = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
+							"const lastname = pm.variables.replaceIn(\"{{$randomLastName}}\");\r",
+							"const email = pm.variables.replaceIn(\"{{$randomEmail}}\");\r",
+							"const password = pm.variables.replaceIn(\"{{$randomPassword}}\");\r",
+							"const username = pm.variables.replaceIn(\"{{$randomAdjective}}\");\r",
+							"const role = 1;\r",
+							"const phone = pm.variables.replaceIn(\"{{$randomPhoneNumber}}\");\r",
+							"\r",
+							"pm.collectionVariables.set(\"newUserBody\", JSON.stringify({firstname, lastname, email, password, username, role, phone}));"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -81,58 +79,25 @@
 			"response": []
 		},
 		{
-			"name": "update password",
+			"name": "Retrieve by isbn13 success",
 			"event": [
 				{
-					"listen": "prerequest",
+					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.collectionVariables.set(\"newPassword\", \"changes2\")"
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200);\r",
+							"    \r",
+							"});\r",
+							"pm.test(\"ISBN13 of book matches expected value\", () => {\r",
+							"    pm.expect(pm.response.json().book.isbn13).to.equal('9780770430080'); \r",
+							"});\r",
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
 					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "",
-							"type": "string"
-						}
-					]
 				},
-				"method": "PATCH",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"{{email}}\",\r\n    \"oldPassword\": \"{{oldPassword}}\",\r\n    \"newPassword\": \"{{newPassword}}\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:4000/changePassword",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"changePassword"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "update password w/ duplicate failure",
-			"event": [
 				{
 					"listen": "prerequest",
 					"script": {
@@ -142,18 +107,6 @@
 						"type": "text/javascript",
 						"packages": {}
 					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 400\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(400); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
 				}
 			],
 			"request": {
@@ -162,561 +115,41 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
 				},
-				"method": "PATCH",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"{{email}}\",\r\n    \"oldPassword\": \"{{oldPassword}}\",\r\n    \"newPassword\": \"{{newPassword}}\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "http://localhost:4000/changePassword",
+					"raw": "http://localhost:4000/c/books/9780770430080",
 					"protocol": "http",
 					"host": [
 						"localhost"
 					],
 					"port": "4000",
 					"path": [
-						"changePassword"
+						"c",
+						"books",
+						"9780770430080"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Login w/ new pw",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"{{email}}\",\r\n    \"password\": \"{{newPassword}}\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:4000/login",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"login"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Login w/ old pw failure",
+			"name": "Retrieve by invalid isbn13",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"pm.test(\"Response status code is 400\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(400); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Response text is consistent with having an invalid pw\", () => {\r",
-							"    pm.expect(pm.response.json().message).to.equal(\"Invalid Credentials\"); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"{{email}}\",\r\n    \"password\": \"{{oldPassword}}\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:4000/login",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"login"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Cursor pagination success",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Limit and cursor match expected defaults\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.limit).to.equal(10); \r",
-							"    pm.expect(pm.response.json().pagination.cursor).to.equal(10); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4000/c/books/cursor",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"cursor"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Cursor pagination next page success",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Next cursor matches expected value\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.cursor).to.equal(20); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4000/c/books/cursor?cursor=10",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"cursor"
-					],
-					"query": [
-						{
-							"key": "cursor",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Cursor pagination invalid limit and cursor",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Limit and cursor match expected defaults\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.limit).to.equal(10); \r",
-							"    pm.expect(pm.response.json().pagination.cursor).to.equal(10); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"packages": {},
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4000/c/books/cursor?cursor=-43&limit=-10",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"cursor"
-					],
-					"query": [
-						{
-							"key": "cursor",
-							"value": "-43"
-						},
-						{
-							"key": "limit",
-							"value": "-10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Offset pagination success",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Limit and offset match expected defaults\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.limit).to.equal(10); \r",
-							"    pm.expect(pm.response.json().pagination.offset).to.equal(0); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"nextPage matches expected value\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.nextPage).to.equal(10); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4000/c/books/offset",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"offset"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Offset pagination next page success",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Limit matches expected defaults\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.limit).to.equal(10);  \r",
-							"});\r",
-							"\r",
-							"pm.test(\"nextPage matches expected value\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.nextPage).to.equal(20); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4000/c/books/offset?offset=10",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"offset"
-					],
-					"query": [
-						{
-							"key": "offset",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Offset pagination invalid limit and offset",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Limit and offset match expected defaults\", () => {\r",
-							"    pm.expect(pm.response.json().pagination.limit).to.equal(10); \r",
-							"    pm.expect(pm.response.json().pagination.offset).to.equal(0); \r",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4000/c/books/offset?limit=-50&offset=-12",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"offset"
-					],
-					"query": [
-						{
-							"key": "limit",
-							"value": "-50"
-						},
-						{
-							"key": "offset",
-							"value": "-12"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Update ratings success",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
+							"    \r",
 							"});\r",
 							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"packages": {},
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "PATCH",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"rating_1\": -1,\r\n    \"rating_2\": -1,\r\n    \"rating_3\": -1,\r\n    \"rating_4\": -1,\r\n    \"rating_5\": -1\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:4000/c/books/9780439554930",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4000",
-					"path": [
-						"c",
-						"books",
-						"9780439554930"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Update partial ratings success",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Response status code is 200\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(200); \r",
-							"});"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -744,19 +177,10 @@
 						}
 					]
 				},
-				"method": "PATCH",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"rating_1\": -1,\r\n    \"rating_2\": -1,\r\n    \"rating_5\": -1\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "http://localhost:4000/c/books/9780439554930",
+					"raw": "http://localhost:4000/c/books/97807704300805345465647547",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -765,26 +189,79 @@
 					"path": [
 						"c",
 						"books",
-						"9780439554930"
+						"97807704300805345465647547"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Update ratings no book w/ ISBN failure",
+			"name": "Retrieve by null isbn13",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400);   \r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4000/c/books/null",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"null"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve by isbn13 not in db",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"pm.test(\"Response status code is 404\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(404); \r",
+							"    pm.expect(pm.response.code).to.equal(404);\r",
 							"});\r",
-							"\r",
-							"pm.test(\"Message matches expected\", () => {\r",
-							"    pm.expect(pm.response.json().message).to.equal(\"No book found to update. Try a different ISBN13\");\r",
-							"});"
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -812,19 +289,10 @@
 						}
 					]
 				},
-				"method": "PATCH",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"rating_1\": -1,\r\n    \"rating_2\": -1,\r\n    \"rating_5\": -1\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "http://localhost:4000/c/books/1111111111111",
+					"raw": "http://localhost:4000/c/books/9999999999999",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -833,26 +301,159 @@
 					"path": [
 						"c",
 						"books",
-						"1111111111111"
+						"9999999999999"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Update ratings bad ISBN failure",
+			"name": "Retrieve by author",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200);\r",
+							"});\r",
+							"pm.test(\"All author fields contain query\"), () => {\r",
+							"    const books = pm.response.json().books;\r",
+							"    books.forEach(book => {\r",
+							"        pm.expect(book.authors).to.include(`${pm.query.author}`);\r",
+							"    });\r",
+							"};\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4000/c/books/author?author=George Orwell",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"author"
+					],
+					"query": [
+						{
+							"key": "author",
+							"value": "George Orwell"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve by author case-insensitive",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200);\r",
+							"});\r",
+							"pm.test(\"All author fields contain query\"), () => {\r",
+							"    const books = pm.response.json().books;\r",
+							"    books.forEach(book => {\r",
+							"        pm.expect(book.authors).to.include(pm.query.author);\r",
+							"    });\r",
+							"};\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4000/c/books/author?author=george orwell",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"author"
+					],
+					"query": [
+						{
+							"key": "author",
+							"value": "george orwell"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve by empty author",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"pm.test(\"Response status code is 400\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
 							"});\r",
-							"\r",
-							"pm.test(\"Message matches expected\", () => {\r",
-							"    pm.expect(pm.response.json().message).to.equal(\"Invalid or missing ISBN13 - please refer to documentation\");\r",
-							"});"
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -880,19 +481,10 @@
 						}
 					]
 				},
-				"method": "PATCH",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"rating_1\": -1,\r\n    \"rating_2\": -1,\r\n    \"rating_5\": -1\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "http://localhost:4000/c/books/23456",
+					"raw": "http://localhost:4000/c/books/author?author= ",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -901,25 +493,231 @@
 					"path": [
 						"c",
 						"books",
-						"23456"
+						"author"
+					],
+					"query": [
+						{
+							"key": "author",
+							"value": " "
+						}
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Update ratings bad ratings info failure",
+			"name": "Retrieve by nonexistent author",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(404);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:4000/c/books/author?author=noah dangerfield",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"author"
+					],
+					"query": [
+						{
+							"key": "author",
+							"value": "noah dangerfield"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create book success (no URLs)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 201\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(201);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let min = 1111111111111;\r",
+							"let max = 9999999999999;\r",
+							"\r",
+							"function randomNumber(min, max) {\r",
+							"    return Math.floor(Math.random() * (max - min + 1)) + min;\r",
+							"}\r",
+							"\r",
+							"const randomisbn = randomNumber(min, max).toString();\r",
+							"pm.collectionVariables.set('isbn13', randomisbn);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": {{isbn13}},\r\n    \"authors\": \"{{$randomFullName}}\",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"title\": \"{{$randomPhrase}}\",\r\n    \"rating_1\": \"{{$randomInt}}\",\r\n    \"rating_2\": \"{{$randomInt}}\",\r\n    \"rating_3\": \"{{$randomInt}}\",\r\n    \"rating_4\": \"{{$randomInt}}\",\r\n    \"rating_5\": \"{{$randomInt}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create book success w/ URLs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 201\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(201);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let min = 1111111111111;\r",
+							"let max = 9999999999999;\r",
+							"\r",
+							"function randomNumber(min, max) {\r",
+							"    return Math.floor(Math.random() * (max - min + 1)) + min;\r",
+							"}\r",
+							"\r",
+							"const randomisbn = randomNumber(min, max).toString();\r",
+							"pm.collectionVariables.set('isbn13', randomisbn);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": {{isbn13}},\r\n    \"authors\": \"{{$randomFullName}}\",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"title\": \"{{$randomPhrase}}\",\r\n    \"rating_1\": {{$randomInt}},\r\n    \"rating_2\": {{$randomInt}},\r\n    \"rating_3\": {{$randomInt}},\r\n    \"rating_4\": {{$randomInt}},\r\n    \"rating_5\": {{$randomInt}},\r\n    \"image_url\": \"https://imgur.com/book-cover\",\r\n    \"image_small_url\": \"https://imgur.com/book-small-cover\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create book failure (1 URL)",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"pm.test(\"Response status code is 400\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(400); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Message matches expected\", () => {\r",
-							"    pm.expect(pm.response.json().message).to.equal(\"Missing or malformed rating information. Please refer to documentation\");\r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
 							"});"
 						],
 						"type": "text/javascript",
@@ -948,11 +746,11 @@
 						}
 					]
 				},
-				"method": "PATCH",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"rating_1\": -1,\r\n    \"rating_2\": \"hello there\",\r\n    \"rating_5\": -1\r\n}",
+					"raw": "{\r\n    \"isbn13\": {{isbn13}},\r\n    \"authors\": \"{{$randomFullName}}\",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"title\": \"{{$randomPhrase}}\",\r\n    \"rating_1\": \"{{$randomInt}}\",\r\n    \"rating_2\": \"{{$randomInt}}\",\r\n    \"rating_3\": \"{{$randomInt}}\",\r\n    \"rating_4\": \"{{$randomInt}}\",\r\n    \"rating_5\": \"{{$randomInt}}\",\r\n    \"image_url\": \"https://imgur.com/book-cover\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -960,7 +758,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:4000/c/books/9780439554930",
+					"raw": "http://localhost:4000/c/books",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -968,26 +766,21 @@
 					"port": "4000",
 					"path": [
 						"c",
-						"books",
-						"9780439554930"
+						"books"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Update ratings negative final ratings failure",
+			"name": "Create book failure missing parts of body",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Response status code is 422\", () => {\r",
-							"    pm.expect(pm.response.code).to.equal(422); \r",
-							"});\r",
-							"\r",
-							"pm.test(\"Message matches expected\", () => {\r",
-							"    pm.expect(pm.response.json().message).to.equal(\"Cannot perform changes - will result in a negative number of ratings\");\r",
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
 							"});"
 						],
 						"type": "text/javascript",
@@ -1016,11 +809,11 @@
 						}
 					]
 				},
-				"method": "PATCH",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"rating_1\": -1,\r\n    \"rating_2\": -1000000000,\r\n    \"rating_5\": -1\r\n}",
+					"raw": "{\r\n    \"isbn13\": {{isbn13}},\r\n    \"authors\": \"{{$randomFullName}}\",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"rating_5\": \"{{$randomInt}}\",\r\n    \"image_url\": \"https://imgur.com/book-cover\",\r\n    \"image_small_url\": \"https://imgur.com/book-cover\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1028,7 +821,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:4000/c/books/9780439554930",
+					"raw": "http://localhost:4000/c/books",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -1036,8 +829,199 @@
 					"port": "4000",
 					"path": [
 						"c",
-						"books",
-						"9780439554930"
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create book failure whitespace title",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": {{isbn13}},\r\n    \"authors\": \"{{$randomFullName}}\",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"title\": \" \",\r\n    \"rating_1\": \"{{$randomInt}}\",\r\n    \"rating_2\": \"{{$randomInt}}\",\r\n    \"rating_3\": \"{{$randomInt}}\",\r\n    \"rating_4\": \"{{$randomInt}}\",\r\n    \"rating_5\": \"{{$randomInt}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create book failure whitespace author",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": {{isbn13}},\r\n    \"authors\": \"      \",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"title\": \"{{$randomPhrase}}\",\r\n    \"rating_1\": \"{{$randomInt}}\",\r\n    \"rating_2\": \"{{$randomInt}}\",\r\n    \"rating_3\": \"{{$randomInt}}\",\r\n    \"rating_4\": \"{{$randomInt}}\",\r\n    \"rating_5\": \"{{$randomInt}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create book failure duplicate ISBN13",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400);\r",
+							"});\r",
+							"pm.test(\"Message says ISBN exists\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"ISBN exists\");\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": 9781061120080,\r\n    \"authors\": \"{{$randomFullName}}\",\r\n    \"publication_year\": 1985,\r\n    \"original_title\": \"{{$randomPhrase}}\",\r\n    \"title\": \"{{$randomPhrase}}\",\r\n    \"rating_1\": \"{{$randomInt}}\",\r\n    \"rating_2\": \"{{$randomInt}}\",\r\n    \"rating_3\": \"{{$randomInt}}\",\r\n    \"rating_4\": \"{{$randomInt}}\",\r\n    \"rating_5\": \"{{$randomInt}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books"
 					]
 				}
 			},
@@ -1046,23 +1030,19 @@
 	],
 	"variable": [
 		{
-			"key": "newUserBody",
-			"value": ""
-		},
-		{
 			"key": "jwt",
 			"value": ""
 		},
 		{
-			"key": "oldPassword",
+			"key": "isbn13",
 			"value": ""
 		},
 		{
-			"key": "email",
+			"key": "newBookBody",
 			"value": ""
 		},
 		{
-			"key": "newPassword",
+			"key": "newUserBody",
 			"value": ""
 		}
 	]

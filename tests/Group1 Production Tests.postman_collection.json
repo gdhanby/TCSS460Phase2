@@ -1,0 +1,1312 @@
+{
+	"info": {
+		"_postman_id": "ac63ee9d-345d-4c9f-b95d-91ee2a00e32e",
+		"name": "Group1 Production Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43598426",
+		"_collection_link": "https://noahdangerfield.postman.co/workspace/Noah-Dangerfield's-Workspace~cbacfb65-b879-4f15-8693-60f9be53bdaa/collection/43598426-ac63ee9d-345d-4c9f-b95d-91ee2a00e32e?action=share&source=collection_link&creator=43598426"
+	},
+	"item": [
+		{
+			"name": "Create test user",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const firstname = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
+							"const lastname = pm.variables.replaceIn(\"{{$randomLastName}}\");\r",
+							"const email = pm.variables.replaceIn(\"{{$randomEmail}}\");\r",
+							"const password = \"changes1\"\r",
+							"const username = pm.variables.replaceIn(\"{{$randomAdjective}}\");\r",
+							"const role = 1;\r",
+							"const phone = pm.variables.replaceIn(\"{{$randomPhoneNumber}}\");\r",
+							"\r",
+							"pm.collectionVariables.set(\"oldPassword\", \"changes1\");\r",
+							"pm.collectionVariables.set(\"email\", email);\r",
+							"pm.collectionVariables.set(\"newUserBody\", JSON.stringify({firstname, lastname, email, password, username, role, phone}));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// fetch jwt\r",
+							"\r",
+							"const jwt = pm.response.json().accessToken;\r",
+							"pm.collectionVariables.set('jwt', jwt);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{{newUserBody}}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete by ISBN success",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Book successfully deleted\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/9780439554930",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"9780439554930"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete by ISBN malformed failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Invalid or missing ISBN13 - please refer to documentation\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/123456789123A",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"123456789123A"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete by ISBN missing failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(404); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"ISBN not found\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/1111111111111",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"1111111111111"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete by title success",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Book successfully deleted\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/title?title=fates and furies",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"title"
+					],
+					"query": [
+						{
+							"key": "title",
+							"value": "fates and furies"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete by title missing failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Invalid or missing title - please refer to documentation\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/title?title=",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"title"
+					],
+					"query": [
+						{
+							"key": "title",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete by title not unique failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Title not found or not unique\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/title?title=the hunger games",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"title"
+					],
+					"query": [
+						{
+							"key": "title",
+							"value": "the hunger games"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by title success",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/title?title=the hunger games",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"title"
+					],
+					"query": [
+						{
+							"key": "title",
+							"value": "the hunger games"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by title no books found failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(404); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"No books found. Try a different title query.\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/title?title=tcss460 rocks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"title"
+					],
+					"query": [
+						{
+							"key": "title",
+							"value": "tcss460 rocks"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by title missing failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Invalid or missing title - please refer to documentation\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/title",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"title"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by year success",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/year?beginningYear=2015&endingYear=",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"year"
+					],
+					"query": [
+						{
+							"key": "beginningYear",
+							"value": "2015"
+						},
+						{
+							"key": "endingYear",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by year ending < beginning failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Ending year value is less than the beginning year value\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/year?beginningYear=2000&endingYear=1990",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"year"
+					],
+					"query": [
+						{
+							"key": "beginningYear",
+							"value": "2000"
+						},
+						{
+							"key": "endingYear",
+							"value": "1990"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by year both blank failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(404); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Year values are not defined - please enter a valid year parameter\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/year?beginningYear=&endingYear=",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"year"
+					],
+					"query": [
+						{
+							"key": "beginningYear",
+							"value": ""
+						},
+						{
+							"key": "endingYear",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by year NaN failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(400); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"Year value(s) are not a valid number\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/year?beginningYear=fsddsf&endingYear=3sdfsd4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"year"
+					],
+					"query": [
+						{
+							"key": "beginningYear",
+							"value": "fsddsf"
+						},
+						{
+							"key": "endingYear",
+							"value": "3sdfsd4"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by year none found failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(404); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"No entries found\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/year?beginningYear=2020&endingYear=",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"year"
+					],
+					"query": [
+						{
+							"key": "beginningYear",
+							"value": "2020"
+						},
+						{
+							"key": "endingYear",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by rating success",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(200); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/rating?ratingCountBegin=5000&ratingCountEnd=15000&ratingAvgBegin=3.00&ratingAvgEnd=4.50",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"rating"
+					],
+					"query": [
+						{
+							"key": "ratingCountBegin",
+							"value": "5000"
+						},
+						{
+							"key": "ratingCountEnd",
+							"value": "15000"
+						},
+						{
+							"key": "ratingAvgBegin",
+							"value": "3.00"
+						},
+						{
+							"key": "ratingAvgEnd",
+							"value": "4.50"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch by rating none found failure",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", () => {\r",
+							"    pm.expect(pm.response.code).to.equal(404); \r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response text matches expected\", () => {\r",
+							"    pm.expect(pm.response.json().message).to.equal(\"No books found. Try a different query.\"); \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4000/c/books/rating?ratingAvgBegin=5.00",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"c",
+						"books",
+						"rating"
+					],
+					"query": [
+						{
+							"key": "ratingAvgBegin",
+							"value": "5.00"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "oldPassword",
+			"value": ""
+		},
+		{
+			"key": "email",
+			"value": ""
+		},
+		{
+			"key": "newUserBody",
+			"value": ""
+		},
+		{
+			"key": "jwt",
+			"value": ""
+		}
+	]
+}

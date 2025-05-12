@@ -49,3 +49,15 @@ The normal meetings over discord along with the in-person meeting on Tuesday the
 ### Beta II Sprint Comments
 
 None.
+
+### Published web API Production version sprint contribution
+- Gage: Worked on lookup by year range route and QA testing
+- Noah: Worked on fetch by title route, fetch by ratings route, testing
+- Ian: Worked on delete by title
+- Christian: Worked on delete by ISBN
+
+### Published web API Production version sprint meetings
+The normal meetings over discord for monday and wednesday. Small meeting on Saturday due to Mothers day plans
+
+### Published web API Production version sprint comments
+None.
