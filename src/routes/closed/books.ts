@@ -52,8 +52,7 @@ function mwValidTitleQuery(
     response: Response,
     next: NextFunction
 ) {
-    const title: string = request.query.title as string;
-    if (isStringProvided(title.trim())) {
+    if (isStringProvided(request.query.title)) {
         next();
     } else {
         console.error('Invalid or missing Title');
@@ -487,7 +486,7 @@ bookRouter.get(
  * @apiSuccess {number} total the total number of books returned
  *
  * @apiError (400: Invalid Title) {String} message "Invalid or missing title  - please refer to documentation"
- * @apiError (404: No Title) {String} message "No books found. Try a different title query."
+ * @apiError (404: No Books) {String} message "No books found. Try a different title query."
  */
 bookRouter.get(
     '/title',
@@ -528,15 +527,15 @@ bookRouter.get(
 /**
  * @api {get} /c/books/year Request to retrieve books by year range
  *
- * @apiDescription Request to retrieve all books based off of a <code>Beginning year</code> and an <code>Ending year</code>
+ * @apiDescription Request to retrieve all books based off of a <code>Beginning year</code> and an <code>Ending year</code>. Both query parameters must be provided. Leave one end of the range blank for defaults to take effect.
  *
  * @apiName GetBooksbyYearRange
  * @apiGroup Books
  *
  * @apiUse JWT
  *
- * @apiQuery {string} [beginningYear] The string that indicates the lower range of looking up books in a year range
- * @apiQuery {string} [endingYear] The string that indicates the upper range of looking up books in a year range
+ * @apiQuery {string} beginningYear The string that indicates the lower range of looking up books in a year range. Defaults to year 0 when blank.
+ * @apiQuery {string} endingYear The string that indicates the upper range of looking up books in a year range. Defaults to year 5000 when blank.
  *
  * @apiSuccess {Object[]} books the book entry objects of all books that satisfy the rating criteria
  * @apiSuccess {string} books.isbn13 the ISBN associated with the book entry
@@ -562,7 +561,7 @@ bookRouter.get(
  *
  * @apiError (400 Ending Year Value is less than Beginning Year Value) {string} message "Ending year value is less than the beginning year value"
  * @apiError (404 Both Year Values are Undefined) {string} message "Year values are not defined - please enter a valid year parameter"
- * @apiError (400 Year Values are NaN) {string} message "Year values are not a valid number"
+ * @apiError (400 Year Values are NaN) {string} message "Year value(s) are not a valid number"
  * @apiError (404 No book entries found) {string} message "No entries found"
  *
  */
@@ -844,7 +843,7 @@ bookRouter.post(
  *
  * @apiSuccess {string} message the string: "Book successfully deleted"
  *
- * @apiError (400: Title Malformed) {string} message "Malformed Title - please resubmit Title"
+ * @apiError (400: Title Invalid/Missing) {string} message "Invalid or missing title - please refer to documentation"
  * @apiError (400: Title Not Found or Not Unique) {string} message "Title not found or not unique"
  */
 bookRouter.delete(
