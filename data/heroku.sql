@@ -33,22 +33,56 @@ CREATE TABLE Account_Credential
 );
 
 
-DROP TABLE IF EXISTS BOOKS;
-CREATE TABLE BOOKS
+DROP TABLE IF EXISTS BOOKS CASCADE;
+CREATE TABLE BOOKS (id INT PRIMARY KEY,
+        isbn13 BIGINT,
+        authors TEXT,
+        publication_year INT,
+        original_title TEXT,
+        title TEXT,
+        rating_avg FLOAT,
+        rating_count INT,
+        rating_1_star INT,
+        rating_2_star INT,
+        rating_3_star INT,
+        rating_4_star INT,
+        rating_5_star INT,
+        image_url TEXT,
+        image_small_url TEXT
+    );
+
+
+-- make new tables --
+DROP TABLE IF EXISTS BOOKS2;
+CREATE TABLE BOOKS2
 (
-    id INT PRIMARY KEY,
-    isbn13 BIGINT,
-    authors TEXT,
-    publication_year INT,
-    original_title TEXT,
-    title TEXT,
-    rating_avg FLOAT,
-    rating_count INT,
-    rating_1_star INT,
-    rating_2_star INT,
-    rating_3_star INT,
-    rating_4_star INT,
-    rating_5_star INT,
-    image_url TEXT,
-    image_small_url TEXT
+  isbn13 BIGINT NOT NULL,
+  id INT NOT NULL,
+  publication_year INT NOT NULL,
+  original_title TEXT NOT NULL,
+  title TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  image_small_url TEXT NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (isbn13)
+);
+
+DROP TABLE IF EXISTS BOOKAUTHORS;
+CREATE TABLE BOOKAUTHORS
+(
+  authors TEXT NOT NULL,
+  id INT NOT NULL,
+  FOREIGN KEY (id) REFERENCES BOOKS2(id)
+);
+
+DROP TABLE IF EXISTS RATINGS;
+CREATE TABLE RATINGS
+(
+  rating_1 INT NOT NULL,
+  rating_2 INT NOT NULL,
+  rating_3 INT NOT NULL,
+  rating_4 INT NOT NULL,
+  rating_5 INT NOT NULL,
+  id INT NOT NULL,
+  FOREIGN KEY (id) REFERENCES BOOKS2(id)
 );
