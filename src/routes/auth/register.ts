@@ -64,7 +64,7 @@ const emailMiddlewareCheck = (
 /**
  * @api {post} /register Request to register a user
  *
- * @apiDescription Document this route. !**Document the password rules here**!
+ * @apiDescription Document this route. Passwords must be at least 11 characters and contain a number.
  * !**Document the role rules here**!
  *
  * @apiName PostRegister
